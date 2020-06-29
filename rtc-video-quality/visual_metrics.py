@@ -10,6 +10,8 @@
 # PATENTS file, you can obtain it at www.aomedia.org/license/patent.
 #
 
+## Note: This file is a fork from the https://aomedia.googlesource.com/aom/+/refs/heads/master/test/visual_metrics.py with some changes made 
+
 """Converts video encoding result data from text files to visualization
 data source."""
 
