@@ -158,11 +158,7 @@ def job_to_string(job):
     return "%s:%s %dsl%dtl %s %s" % (job['encoder'], job['codec'], job['num_spatial_layers'], job['num_temporal_layers'], ":".join(str(i) for i in job['target_bitrates_kbps']), os.path.basename(job['clip']['input_file']))
 
 def worker():
-  # global args
-  # global jobs
-  # global current_job
-  # global has_errored
-  # global total_jobs
+  
   pp = pprint.PrettyPrinter(indent=2)
   while True:
     with thread_lock:
