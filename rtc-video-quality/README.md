@@ -1,5 +1,7 @@
 # Measuring Video Codec Performance
 
+**Note: This is a fork from the [google/rtc-video-quality](https://github.com/google/rtc-video-quality) with some changes made**
+
 _This is not an official Google product._
 
 ![Example graph of SSIM-Y over multiple bitrates](example-ssim-y.png)
