@@ -1,14 +1,14 @@
-# aom/
-libvpx/
-openh264/
-# rav1e/
-# SVT-AV1/
-vmaf/
-yami/
-*.ivf
-*.yuv
-*.y4m
-*.txt
+**/aom/
+**/libvpx/
+**/openh264/
+**/rav1e/
+**/SVT-AV1/
+**/vmaf/
+**/yami/
+**/*.ivf
+**/*.yuv
+**/*.y4m
+**/*.txt
 **/__pycache__/**
 *.vscode
 .env/
