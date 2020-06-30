@@ -15,12 +15,85 @@
 
 import argparse
 import ast
+from pathlib import Path
+from collections import OrderedDict
 import matplotlib.pyplot as plt
 import os
 import re
 
+from visual_metrics import HandleFiles
+
 layer_regex_pattern = re.compile(r"^(\d)sl(\d)tl$")
 
+def generate_stt(data, output_dir=''):
+
+  metrics = [
+          'vpx-ssim',
+          'ssim',
+          'ssim-y',
+          'ssim-u',
+          'ssim-v',
+          'avg-psnr',
+          'avg-psnr-y',
+          'avg-psnr-u',
+          'avg-psnr-v',
+          'glb-psnr',
+          'glb-psnr-y',
+          'glb-psnr-u',
+          'glb-psnr-v',
+          'encode-time-utilization',
+          'actual-encode-time-ms',
+          'vmaf'
+        ]
+  encoder_codecs = set([(item['encoder'], item['codec']) for item in data])
+  videos = set([item['input-file'] for item in data])
+  
+## For target bitrate
+
+
+  for encoder, codec in encoder_codecs:
+      ## Create a directory for every encoder-codec tool
+    Path(f"./{output_dir}/{encoder}:{codec}").mkdir(parents=True, exist_ok=True)
+    for video in videos:
+        ## Create a file for the metrics of this certain video
+      sb = ""
+
+      encoder_metrics = list(filter(lambda item: item['encoder'] == encoder and item['codec'] == codec and item['input-file'] == video, data))
+
+      ##  For Target bitrate
+      #   bitrates = sorted(list(set([[item['actual-bitrate-bps'] // 1000 ][0] for item in encoder_metrics])))
+
+      bitrates = sorted(list(set([item['actual-bitrate-bps'] for item in encoder_metrics])))
+      for bitrate in bitrates:
+        ## Append this to the table
+
+        ## For target bitrate
+        # filtered_item = list(filter(lambda item: item['encoder'] == encoder and item['codec'] == codec and item['input-file'] == video and bitrate in [item['actual-bitrate-bps'] // 1000 ], data))
+        
+        
+        filtered_item = list(filter(lambda item: item['encoder'] == encoder and item['codec'] == codec and item['input-file'] == video and bitrate == item['actual-bitrate-bps'], data))
+        assert len(filtered_item ) == 1
+        item = filtered_item[0]
+
+        ## Filter my dictionary to contain the required key values
+        required_data = OrderedDict()
+        required_data['bitrate'] = str(bitrate)
+        for key in metrics:
+          if key in item:
+            required_data[key] = "{:.2f}".format(item[key])
+
+        header = '\t'.join(required_data.keys()) + '\n'
+        values = '\t'.join(required_data.values()) + '\n'
+
+        sb += header + values
+      with open(f'./{output_dir}/{encoder}:{codec}/{video}.stt', 'w') as file:
+        file.write(sb)
+
+  enc_cod_dirs = [f"./{output_dir}/{encoder}:{codec}" for encoder, codec in encoder_codecs]
+  html = HandleFiles(['', 'metrics_template.html', '*stt'] + enc_cod_dirs)
+
+  with open(f"{output_dir}/results.html", "w") as file:
+    file.write(html)
 
 def writable_dir(directory):
     if not os.path.isdir(directory) or not os.access(directory, os.W_OK):
