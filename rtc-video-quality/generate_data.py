@@ -113,7 +113,7 @@ def encoder_pairs(string):
             raise argparse.ArgumentTypeError(
                 "Argument '%s' of '%s' doesn't match input format.\n" %
                 (pair, string))
-        if not pair_match.group(1) in encoder_commands:
+        if not get_encoder_command(pair_match.group(1)):
             raise argparse.ArgumentTypeError(
                 "Unknown encoder: '%s' in pair '%s'\n" %
                 (pair_match.group(1), pair))
@@ -441,7 +441,7 @@ def generate_jobs(args, temp_dir):
                 }
                 job_temp_dir = tempfile.mkdtemp(dir=temp_dir)
                 (command,
-                 encoded_files) = encoder_commands[job['encoder']](job,
+                 encoded_files) = get_encoder_command(job['encoder'])(job,
                                                                    job_temp_dir)
                 command[0] = find_absolute_path(args.use_system_path,
                                                 command[0])
