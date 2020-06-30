@@ -209,6 +209,18 @@ def prepare_clips(args, temp_dir):
                         total_filesize -= blocksize
             clip['yuv_file'] = truncated_filename
 
+        (fd, y4m_file) = tempfile.mkstemp(dir=temp_dir, suffix='.y4m')
+        os.close(fd)
+
+        with open(os.devnull, 'w') as devnull:
+            subprocess.check_call(
+                ['ffmpeg', '-y', '-s', '%dx%d' % (clip['width'], clip['height']), '-r', str(int(clip['fps'] + 0.5)), '-pix_fmt', 'yuv420p', '-i', clip['yuv_file'], y4m_file],
+                stdout=devnull,
+                stderr=devnull
+            )
+
+        clip['y4m_file'] = y4m_file
+
 
 def decode_file(job, temp_dir, encoded_file):
     (fd, decoded_file) = tempfile.mkstemp(dir=temp_dir, suffix=".yuv")
