@@ -53,14 +53,13 @@ parser.add_argument('--formats',
 
 
 def split_data(graph_data, attribute):
-    groups = {}
-    for element in graph_data:
-        value = element[attribute]
-        if value not in groups:
-            groups[value] = []
-        groups[value].append(element)
-    return list(groups.values())
-
+  groups = {}
+  for element in graph_data:
+    value = element[attribute]
+    if value not in groups:
+      groups[value] = []
+    groups[value].append(element)
+  return groups.values()
 
 def normalize_bitrate_config_string(config):
     return ":".join([str(int(x * 100.0 / config[-1])) for x in config])
