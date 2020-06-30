@@ -45,7 +45,7 @@ def split_data(graph_data, attribute):
     if value not in groups:
       groups[value] = []
     groups[value].append(element)
-  return list(groups.values())
+  return groups.values()
 
 def normalize_bitrate_config_string(config):
   return ":".join([str(int(x * 100.0 / config[-1])) for x in config])
