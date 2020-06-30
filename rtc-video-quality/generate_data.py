@@ -384,7 +384,7 @@ def add_framestats(results_dict, framestats_file, statstype):
   with open(framestats_file) as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
-      for (metric, value) in list(row.items()):
+      for (metric, value) in row.items():
         metric_key = 'frame-%s' % metric
         if metric_key not in results_dict:
           results_dict[metric_key] = []
