@@ -217,7 +217,7 @@ def decode_file(job, temp_dir, encoded_file):
     os.close(fd)
     with open(os.devnull, 'w') as devnull:
         if job['codec'] in ['av1', 'vp8', 'vp9']:
-            decoder = 'aom/aomdec' if job['codec'] == 'av1' else 'libvpx/vpxdec'
+            decoder = AOM_DEC_BIN if job['codec'] == 'av1' else VPX_DEC_BIN
             subprocess.check_call([
                 decoder, '--i420',
                 '--codec=%s' % job['codec'], '-o', decoded_file, encoded_file,
@@ -227,11 +227,10 @@ def decode_file(job, temp_dir, encoded_file):
                                   stderr=devnull,
                                   encoding='utf-8')
         elif job['codec'] == 'h264':
-            subprocess.check_call(
-                ['openh264/h264dec', encoded_file, decoded_file],
-                stdout=devnull,
-                stderr=devnull,
-                encoding='utf-8')
+            subprocess.check_call([H264_DEC_BIN, encoded_file, decoded_file],
+                                  stdout=devnull,
+                                  stderr=devnull,
+                                  encoding='utf-8')
             # TODO(pbos): Generate H264 framestats.
             framestats_file = None
     return (decoded_file, framestats_file)
@@ -259,7 +258,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
     (fd, metrics_framestats) = tempfile.mkstemp(dir=temp_dir, suffix=".csv")
     os.close(fd)
     ssim_results = subprocess.check_output([
-        'libvpx/tools/tiny_ssim', clip['yuv_file'], decoded_file,
+        TINY_SSIM_BIN, clip['yuv_file'], decoded_file,
         "%dx%d" % (results_dict['width'], results_dict['height']),
         str(temporal_skip), metrics_framestats
     ],
@@ -295,7 +294,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
 
     if args.enable_vmaf:
         vmaf_results = subprocess.check_output([
-            'vmaf/run_vmaf', 'yuv420p',
+            VMAF_BIN, 'yuv420p',
             str(results_dict['width']),
             str(results_dict['height']), clip['yuv_file'], decoded_file,
             '--out-fmt', 'json'
@@ -529,16 +528,16 @@ def main():
         return 0
 
     # Make sure commands for quality metrics are present.
-    find_absolute_path(False, 'libvpx/tools/tiny_ssim')
+    find_absolute_path(False, TINY_SSIM_BIN)
     for (encoder, codec) in args.encoders:
         if codec in ['vp8', 'vp9']:
-            find_absolute_path(False, 'libvpx/vpxdec')
+            find_absolute_path(False, VPX_DEC_BIN)
         elif codec == 'av1':
-            find_absolute_path(False, 'aom/aomdec')
+            find_absolute_path(False, AOM_DEC_BIN)
         elif codec == 'h264':
-            find_absolute_path(False, 'openh264/h264dec')
+            find_absolute_path(False, H264_DEC_BIN)
     if args.enable_vmaf:
-        find_absolute_path(False, 'vmaf/run_vmaf')
+        find_absolute_path(False, VMAF_BIN)
 
     print("[0/%d] Running jobs..." % total_jobs)
 
