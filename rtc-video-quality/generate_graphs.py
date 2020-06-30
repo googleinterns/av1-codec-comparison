@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright 2016 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,7 +45,7 @@ def split_data(graph_data, attribute):
     if value not in groups:
       groups[value] = []
     groups[value].append(element)
-  return groups.values()
+  return list(groups.values())
 
 def normalize_bitrate_config_string(config):
   return ":".join([str(int(x * 100.0 / config[-1])) for x in config])
@@ -138,8 +138,8 @@ def main():
 
   current_graph = 1
   total_graphs = len(graph_dict)
-  for (subdir, graph_name), lines in graph_dict.iteritems():
-    print "[%d/%d] %s" % (current_graph, total_graphs, graph_name)
+  for (subdir, graph_name), lines in graph_dict.items():
+    print("[%d/%d] %s" % (current_graph, total_graphs, graph_name))
     current_graph += 1
     metric = graph_name.split(':')[-1]
     fig, ax = plt.subplots()

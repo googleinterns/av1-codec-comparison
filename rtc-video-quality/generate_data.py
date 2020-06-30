@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright 2016 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,7 +45,7 @@ def find_absolute_path(use_system_path, binary):
   target = os.path.join(os.path.dirname(os.path.abspath(__file__)), binary)
   if os.path.isfile(target) and os.access(target, os.X_OK):
     if use_system_path:
-      print "WARNING: '%s' not in PATH (using --use-system-path), falling back on locally-compiled binary." % os.path.basename(binary)
+      print("WARNING: '%s' not in PATH (using --use-system-path), falling back on locally-compiled binary." % os.path.basename(binary))
     binary_absolute_paths[binary] = target
     return target
 
@@ -273,9 +273,9 @@ yuv_clip_pattern = re.compile(r"^(.*[\._](\d+)_(\d+).yuv):(\d+)$")
 def clip_arg(clip):
   (file_root, file_ext) = os.path.splitext(clip)
   if file_ext == '.y4m':
-    width = int(subprocess.check_output(["mediainfo", "--Inform=Video;%Width%", clip]))
-    height = int(subprocess.check_output(["mediainfo", "--Inform=Video;%Height%", clip]))
-    fps = float(subprocess.check_output(["mediainfo", "--Inform=Video;%FrameRate%", clip]))
+    width = int(subprocess.check_output(["mediainfo", "--Inform=Video;%Width%", clip], encoding='utf-8'))
+    height = int(subprocess.check_output(["mediainfo", "--Inform=Video;%Height%", clip], encoding='utf-8'))
+    fps = float(subprocess.check_output(["mediainfo", "--Inform=Video;%FrameRate%", clip], encoding='utf-8'))
     return {'input_file': clip, 'height': height, 'width': width, 'fps': fps, 'file_type': 'y4m'}
 
   # Make sure YUV files are correctly formatted + look readable before actually
@@ -335,15 +335,15 @@ def prepare_clips(args, temp_dir):
   clips = args.clips
   y4m_clips = [clip for clip in clips if clip['file_type'] == 'y4m']
   if y4m_clips:
-    print "Converting %d .y4m clip%s..." % (len(y4m_clips), "" if len(y4m_clips) == 1 else "s")
+    print("Converting %d .y4m clip%s..." % (len(y4m_clips), "" if len(y4m_clips) == 1 else "s"))
     for clip in y4m_clips:
       (fd, yuv_file) = tempfile.mkstemp(dir=temp_dir, suffix=".%d_%d.yuv" % (clip['width'], clip['height']))
       os.close(fd)
       with open(os.devnull, 'w') as devnull:
-        subprocess.check_call(['ffmpeg', '-y', '-i', clip['input_file'], yuv_file], stdout=devnull, stderr=devnull)
+        subprocess.check_call(['ffmpeg', '-y', '-i', clip['input_file'], yuv_file], stdout=devnull, stderr=devnull, encoding='utf-8')
       clip['yuv_file'] = yuv_file
   for clip in clips:
-    clip['sha1sum'] = subprocess.check_output(['sha1sum', clip['input_file']]).split(' ', 1)[0]
+    clip['sha1sum'] = subprocess.check_output(['sha1sum', clip['input_file']], encoding='utf-8').split(' ', 1)[0]
     if 'yuv_file' not in clip:
       clip['yuv_file'] = clip['input_file']
     frame_size = 6 * clip['width'] * clip['height'] / 4
@@ -372,9 +372,9 @@ def decode_file(job, temp_dir, encoded_file):
   with open(os.devnull, 'w') as devnull:
     if job['codec'] in ['av1', 'vp8', 'vp9']:
       decoder = 'aom/aomdec' if job['codec'] == 'av1' else 'libvpx/vpxdec'
-      subprocess.check_call([decoder, '--i420', '--codec=%s' % job['codec'], '-o', decoded_file, encoded_file, '--framestats=%s' % framestats_file], stdout=devnull, stderr=devnull)
+      subprocess.check_call([decoder, '--i420', '--codec=%s' % job['codec'], '-o', decoded_file, encoded_file, '--framestats=%s' % framestats_file], stdout=devnull, stderr=devnull, encoding='utf-8')
     elif job['codec'] == 'h264':
-      subprocess.check_call(['openh264/h264dec', encoded_file, decoded_file], stdout=devnull, stderr=devnull)
+      subprocess.check_call(['openh264/h264dec', encoded_file, decoded_file], stdout=devnull, stderr=devnull, encoding='utf-8')
       # TODO(pbos): Generate H264 framestats.
       framestats_file = None
   return (decoded_file, framestats_file)
@@ -384,7 +384,7 @@ def add_framestats(results_dict, framestats_file, statstype):
   with open(framestats_file) as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
-      for (metric, value) in row.items():
+      for (metric, value) in list(row.items()):
         metric_key = 'frame-%s' % metric
         if metric_key not in results_dict:
           results_dict[metric_key] = []
@@ -399,7 +399,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
   # TODO(pbos): Perform SSIM on downscaled .yuv files for spatial layers.
   (fd, metrics_framestats) = tempfile.mkstemp(dir=temp_dir, suffix=".csv")
   os.close(fd)
-  ssim_results = subprocess.check_output(['libvpx/tools/tiny_ssim', clip['yuv_file'], decoded_file, "%dx%d" % (results_dict['width'], results_dict['height']), str(temporal_skip), metrics_framestats]).splitlines()
+  ssim_results = subprocess.check_output(['libvpx/tools/tiny_ssim', clip['yuv_file'], decoded_file, "%dx%d" % (results_dict['width'], results_dict['height']), str(temporal_skip), metrics_framestats], encoding='utf-8').splitlines()
   metric_map = {
     'AvgPSNR': 'avg-psnr',
     'AvgPSNR-Y': 'avg-psnr-y',
@@ -430,7 +430,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
   add_framestats(results_dict, metrics_framestats, float)
 
   if args.enable_vmaf:
-    vmaf_results = subprocess.check_output(['vmaf/run_vmaf', 'yuv420p', str(results_dict['width']), str(results_dict['height']), clip['yuv_file'], decoded_file, '--out-fmt', 'json'])
+    vmaf_results = subprocess.check_output(['vmaf/run_vmaf', 'yuv420p', str(results_dict['width']), str(results_dict['height']), clip['yuv_file'], decoded_file, '--out-fmt', 'json'], encoding='utf-8')
     vmaf_obj = json.loads(vmaf_results)
     results_dict['vmaf'] = float(vmaf_obj['aggregate']['VMAF_score'])
 
@@ -452,7 +452,8 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
   results_dict['bitrate-utilization'] = float(bitrate_used_bps) / target_bitrate_bps
 
 
-def run_command(job, (command, encoded_files), job_temp_dir, encoded_file_dir):
+def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
+  (command, encoded_files) = encoder_command
   clip = job['clip']
   start_time = time.time()
   try:
@@ -579,10 +580,10 @@ def worker():
     with thread_lock:
       current_job += 1
       run_ok = results is not None
-      print "[%d/%d] %s (%s)" % (current_job, total_jobs, job_str, "OK" if run_ok else "ERROR")
+      print("[%d/%d] %s (%s)" % (current_job, total_jobs, job_str, "OK" if run_ok else "ERROR"))
       if not run_ok:
         has_errored = True
-        print error
+        print(error)
       else:
         for result in results:
           args.out.write(pp.pformat(result))
@@ -611,9 +612,9 @@ def main():
   if args.dump_commands:
     for (job, (command, encoded_files), job_temp_dir) in jobs:
       current_job += 1
-      print "[%d/%d] %s" % (current_job, total_jobs, job_to_string(job))
-      print "> %s" % " ".join(command)
-      print
+      print("[%d/%d] %s" % (current_job, total_jobs, job_to_string(job)))
+      print("> %s" % " ".join(command))
+      print()
 
     shutil.rmtree(temp_dir)
     return 0
@@ -630,7 +631,7 @@ def main():
   if args.enable_vmaf:
     find_absolute_path(False, 'vmaf/run_vmaf')
 
-  print "[0/%d] Running jobs..." % total_jobs
+  print("[0/%d] Running jobs..." % total_jobs)
 
   args.out.write('[')
 
