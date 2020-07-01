@@ -16,7 +16,7 @@
 import os
 import subprocess
 import tempfile
-from binary_vars import *
+import binary_vars
 
 libvpx_threads = 4
 
@@ -36,7 +36,7 @@ def aom_command(job, temp_dir):
     clip = job['clip']
     fps = int(clip['fps'] + 0.5)
     command = [
-      AOM_ENC_BIN,
+      binary_vars.AOM_ENC_BIN,
       "--codec=av1",
       "-p", "2",
       "--fpf=%s" % first_pass_file,
@@ -83,7 +83,7 @@ def libvpx_tl_command(job, temp_dir):
     fps = int(clip['fps'] + 0.5)
 
     command = [
-        VPX_SVC_ENC_BIN,
+        binary_vars.VPX_SVC_ENC_BIN,
         clip['yuv_file'],
         outfile_prefix,
         job['codec'],
@@ -154,7 +154,7 @@ def libvpx_command(job, temp_dir):
     # respecting NTSC or other non-integer FPS formats here.
     fps = int(clip['fps'] + 0.5)
 
-    command = [VPX_ENC_BIN] + codec_params + common_params + [
+    command = [binary_vars.VPX_ENC_BIN] + codec_params + common_params + [
       '--fps=%d/1' % fps,
       '--target-bitrate=%d' % job['target_bitrates_kbps'][0],
       '--width=%d' % clip['width'],
@@ -179,7 +179,7 @@ def openh264_command(job, temp_dir):
     clip = job['clip']
 
     command = [
-      H264_ENC_BIN,
+      binary_vars.H264_ENC_BIN,
       '-rc', 1,
       '-denois', 0,
       '-scene', 0,
@@ -215,7 +215,7 @@ def yami_command(job, temp_dir):
     fps = int(clip['fps'] + 0.5)
 
     command = [
-      YAMI_ENC_BIN,
+      binary_vars.YAMI_ENC_BIN,
       '--rcmode', 'CBR',
       '--ipperiod', 1,
       '--intraperiod', 3000,

@@ -28,7 +28,7 @@ import threading
 import time
 
 from encoder_commands import *
-from binary_vars import *
+import binary_vars
 
 binary_absolute_paths = {}
 
@@ -217,7 +217,7 @@ def decode_file(job, temp_dir, encoded_file):
     os.close(fd)
     with open(os.devnull, 'w') as devnull:
         if job['codec'] in ['av1', 'vp8', 'vp9']:
-            decoder = AOM_DEC_BIN if job['codec'] == 'av1' else VPX_DEC_BIN
+            decoder = binary_vars.AOM_DEC_BIN if job['codec'] == 'av1' else binary_vars.VPX_DEC_BIN
             subprocess.check_call([
                 decoder, '--i420',
                 '--codec=%s' % job['codec'], '-o', decoded_file, encoded_file,
@@ -227,7 +227,7 @@ def decode_file(job, temp_dir, encoded_file):
                                   stderr=devnull,
                                   encoding='utf-8')
         elif job['codec'] == 'h264':
-            subprocess.check_call([H264_DEC_BIN, encoded_file, decoded_file],
+            subprocess.check_call([binary_vars.H264_DEC_BIN, encoded_file, decoded_file],
                                   stdout=devnull,
                                   stderr=devnull,
                                   encoding='utf-8')
@@ -258,7 +258,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
     (fd, metrics_framestats) = tempfile.mkstemp(dir=temp_dir, suffix=".csv")
     os.close(fd)
     ssim_results = subprocess.check_output([
-        TINY_SSIM_BIN, clip['yuv_file'], decoded_file,
+        binary_vars.TINY_SSIM_BIN, clip['yuv_file'], decoded_file,
         "%dx%d" % (results_dict['width'], results_dict['height']),
         str(temporal_skip), metrics_framestats
     ],
@@ -294,7 +294,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
 
     if args.enable_vmaf:
         vmaf_results = subprocess.check_output([
-            VMAF_BIN, 'yuv420p',
+            binary_vars.VMAF_BIN, 'yuv420p',
             str(results_dict['width']),
             str(results_dict['height']), clip['yuv_file'], decoded_file,
             '--out-fmt', 'json'
@@ -528,16 +528,16 @@ def main():
         return 0
 
     # Make sure commands for quality metrics are present.
-    find_absolute_path(False, TINY_SSIM_BIN)
+    find_absolute_path(False, binary_vars.TINY_SSIM_BIN)
     for (encoder, codec) in args.encoders:
         if codec in ['vp8', 'vp9']:
-            find_absolute_path(False, VPX_DEC_BIN)
+            find_absolute_path(False, binary_vars.VPX_DEC_BIN)
         elif codec == 'av1':
-            find_absolute_path(False, AOM_DEC_BIN)
+            find_absolute_path(False, binary_vars.AOM_DEC_BIN)
         elif codec == 'h264':
-            find_absolute_path(False, H264_DEC_BIN)
+            find_absolute_path(False, binary_vars.H264_DEC_BIN)
     if args.enable_vmaf:
-        find_absolute_path(False, VMAF_BIN)
+        find_absolute_path(False, binary_vars.VMAF_BIN)
 
     print("[0/%d] Running jobs..." % total_jobs)
 
