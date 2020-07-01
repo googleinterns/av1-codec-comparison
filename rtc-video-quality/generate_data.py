@@ -430,13 +430,18 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
   add_framestats(results_dict, metrics_framestats, float)
 
   if args.enable_vmaf:
-    vmaf_results = subprocess.check_output(['vmaf/run_vmaf', 'yuv420p', str(results_dict['width']), str(results_dict['height']), clip['yuv_file'], decoded_file, '--out-fmt', 'json'], encoding='utf-8')
-    vmaf_obj = json.loads(vmaf_results)
-    results_dict['vmaf'] = float(vmaf_obj['aggregate']['VMAF_score'])
+      (fd,results_file) = tempfile.mkstemp(dir=temp_dir, suffix="%s-%s-%d.json" % (job['encoder'], job['codec'],  job['qp_value']))
+      os.close(fd)
+      vmaf_results = subprocess.check_output(['vmaf/libvmaf/build/tools/vmafossexec', 'yuv420p', str(results_dict['width']), str(
+          results_dict['height']), clip['yuv_file'], decoded_file, 'vmaf/model/vmaf_v0.6.1.pkl', '--log-fmt', 'json', '--log', results_file], encoding='utf-8')
+      # vmaf_obj = json.loads(vmaf_results)
+      with open(results_file, 'r') as results_file: 
+          vmaf_obj = json.load(results_file)
+      results_dict['vmaf'] = float(vmaf_obj['VMAF score'])
 
-    results_dict['frame-vmaf'] = []
-    for frame in vmaf_obj['frames']:
-      results_dict['frame-vmaf'].append(frame['VMAF_score'])
+      results_dict['frame-vmaf'] = []
+      for frame in vmaf_obj['frames']:
+          results_dict['frame-vmaf'].append(frame['metrics']['vmaf'])
 
   layer_fps = clip['fps'] / temporal_divide
   results_dict['layer-fps'] = layer_fps
@@ -629,7 +634,7 @@ def main():
     elif codec == 'h264':
       find_absolute_path(False, 'openh264/h264dec')
   if args.enable_vmaf:
-    find_absolute_path(False, 'vmaf/run_vmaf')
+    find_absolute_path(False, 'vmaf/libvmaf/build/tools/vmafossexec')
 
   print("[0/%d] Running jobs..." % total_jobs)
 
