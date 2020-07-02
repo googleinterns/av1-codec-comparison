@@ -217,7 +217,8 @@ def decode_file(job, temp_dir, encoded_file):
     os.close(fd)
     with open(os.devnull, 'w') as devnull:
         if job['codec'] in ['av1', 'vp8', 'vp9']:
-            decoder = binary_vars.AOM_DEC_BIN if job['codec'] == 'av1' else binary_vars.VPX_DEC_BIN
+            decoder = binary_vars.AOM_DEC_BIN if job[
+                'codec'] == 'av1' else binary_vars.VPX_DEC_BIN
             subprocess.check_call([
                 decoder, '--i420',
                 '--codec=%s' % job['codec'], '-o', decoded_file, encoded_file,
@@ -227,24 +228,25 @@ def decode_file(job, temp_dir, encoded_file):
                                   stderr=devnull,
                                   encoding='utf-8')
         elif job['codec'] == 'h264':
-            subprocess.check_call([binary_vars.H264_DEC_BIN, encoded_file, decoded_file],
-                                  stdout=devnull,
-                                  stderr=devnull,
-                                  encoding='utf-8')
+            subprocess.check_call(
+                [binary_vars.H264_DEC_BIN, encoded_file, decoded_file],
+                stdout=devnull,
+                stderr=devnull,
+                encoding='utf-8')
             # TODO(pbos): Generate H264 framestats.
             framestats_file = None
     return (decoded_file, framestats_file)
 
 
 def add_framestats(results_dict, framestats_file, statstype):
-  with open(framestats_file) as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-      for (metric, value) in row.items():
-        metric_key = 'frame-%s' % metric
-        if metric_key not in results_dict:
-          results_dict[metric_key] = []
-        results_dict[metric_key].append(statstype(value))
+    with open(framestats_file) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            for (metric, value) in row.items():
+                metric_key = 'frame-%s' % metric
+                if metric_key not in results_dict:
+                    results_dict[metric_key] = []
+                results_dict[metric_key].append(statstype(value))
 
 
 def generate_metrics(results_dict, job, temp_dir, encoded_file):
@@ -263,6 +265,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
         str(temporal_skip), metrics_framestats
     ],
                                            encoding='utf-8').splitlines()
+
     metric_map = {
         'AvgPSNR': 'avg-psnr',
         'AvgPSNR-Y': 'avg-psnr-y',
@@ -312,6 +315,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
 
     spatial_divide = 2**(job['num_spatial_layers'] - 1 -
                          encoded_file['spatial-layer'])
+
     results_dict['layer-width'] = results_dict['width'] // spatial_divide
     results_dict['layer-height'] = results_dict['height'] // spatial_divide
 
