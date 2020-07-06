@@ -13,6 +13,8 @@
 # limitations under the License.
 
 # Encoder Binaries
+RAV1E_ENC_BIN = 'rav1e/target/release/rav1e'
+SVT_ENC_BIN = 'SVT-AV1/Bin/Release/SvtAv1EncApp'
 AOM_ENC_BIN = 'aom/aom_build/aomenc'
 VPX_ENC_BIN = 'libvpx/vpxenc'
 H264_ENC_BIN = 'openh264/h264enc'

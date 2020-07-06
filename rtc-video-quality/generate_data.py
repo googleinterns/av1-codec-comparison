@@ -113,7 +113,7 @@ def encoder_pairs(string):
             raise argparse.ArgumentTypeError(
                 "Argument '%s' of '%s' doesn't match input format.\n" %
                 (pair, string))
-        if not pair_match.group(1) in encoder_commands:
+        if not get_encoder_command(pair_match.group(1)):
             raise argparse.ArgumentTypeError(
                 "Unknown encoder: '%s' in pair '%s'\n" %
                 (pair_match.group(1), pair))
@@ -208,6 +208,21 @@ def prepare_clips(args, temp_dir):
                         truncated_file.write(data)
                         total_filesize -= blocksize
             clip['yuv_file'] = truncated_filename
+
+        (fd, y4m_file) = tempfile.mkstemp(dir=temp_dir, suffix='.y4m')
+        os.close(fd)
+
+        with open(os.devnull, 'w') as devnull:
+            subprocess.check_call([
+                'ffmpeg', '-y', '-s',
+                '%dx%d' % (clip['width'], clip['height']), '-r',
+                str(int(clip['fps'] + 0.5)), '-pix_fmt', 'yuv420p', '-i',
+                clip['yuv_file'], y4m_file
+            ],
+                                  stdout=devnull,
+                                  stderr=devnull)
+
+        clip['y4m_file'] = y4m_file
 
 
 def decode_file(job, temp_dir, encoded_file):
@@ -444,9 +459,8 @@ def generate_jobs(args, temp_dir):
                         args.num_temporal_layers,
                 }
                 job_temp_dir = tempfile.mkdtemp(dir=temp_dir)
-                (command,
-                 encoded_files) = encoder_commands[job['encoder']](job,
-                                                                   job_temp_dir)
+                (command, encoded_files) = get_encoder_command(job['encoder'])(
+                    job, job_temp_dir)
                 command[0] = find_absolute_path(args.use_system_path,
                                                 command[0])
                 jobs.append((job, (command, encoded_files), job_temp_dir))
