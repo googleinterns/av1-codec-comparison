@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 Google Inc. All rights reserved.
+# Copyright 2020 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,20 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
-
-# Download aom if not available.
-if [ ! -d aom ]; then
-  git clone https://aomedia.googlesource.com/aom
+## Check if cargo command exists for building
+if ! [ -x "$(command -v cargo)" ]; then 
+    echo "Error: Cargo is not installed." >&2
+    exit 1
 fi
 
-# Check out the pinned aom version.
-pushd aom
-git fetch
-git checkout --detach b2209ceed75ba9e48b680f94d4fbca419a4eec6d
+set -x 
 
-mkdir -p aom_build
-pushd aom_build
-# Build aom
-cmake ../
-make
+# Download rav1e if not available
+if [ ! -d rav1e ]; then 
+    git clone https://github.com/xiph/rav1e
+fi
+
+## Check out the pinned rav1e version
+pushd rav1e
+git fetch 
+git checkout --detach 99114995e8771dd923a146e5616f7474e9b33eb7
+
+## Build rav1e
+cargo build --release
