@@ -430,11 +430,20 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
   add_framestats(results_dict, metrics_framestats, float)
 
   if args.enable_vmaf:
-      (fd,results_file) = tempfile.mkstemp(dir=temp_dir, suffix="%s-%s-%d.json" % (job['encoder'], job['codec'],  job['qp_value']))
+      (fd, results_file) = tempfile.mkstemp(
+            dir=temp_dir,
+            suffix="%s-%s-%d.json" %
+            (job['encoder'], job['codec'], job['qp_value']))
       os.close(fd)
-      vmaf_results = subprocess.check_output(['vmaf/libvmaf/build/tools/vmafossexec', 'yuv420p', str(results_dict['width']), str(
-          results_dict['height']), clip['yuv_file'], decoded_file, 'vmaf/model/vmaf_v0.6.1.pkl', '--log-fmt', 'json', '--log', results_file], encoding='utf-8')
-      # vmaf_obj = json.loads(vmaf_results)
+      vmaf_results = subprocess.check_output([
+            'vmaf/libvmaf/build/tools/vmafossexec', 'yuv420p',
+            str(results_dict['width']),
+            str(results_dict['height']), clip['yuv_file'], decoded_file,
+            'vmaf/model/vmaf_v0.6.1.pkl', '--log-fmt', 'json', '--log',
+            results_file
+        ],
+                                               encoding='utf-8')
+        # vmaf_obj = json.loads(vmaf_results)
       with open(results_file, 'r') as results_file: 
           vmaf_obj = json.load(results_file)
       results_dict['vmaf'] = float(vmaf_obj['VMAF score'])
@@ -460,13 +469,13 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
 def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
   (command, encoded_files) = encoder_command
   clip = job['clip']
-  start_time = time.time()
+  start_time = time.clock()
   try:
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   except OSError as e:
     return (None, "> %s\n%s" % (" ".join(command), e))
   (output, _) = process.communicate()
-  actual_encode_ms = (time.time() - start_time) * 1000
+  actual_encode_ms = (time.clock() - start_time) * 1000
   input_yuv_filesize = os.path.getsize(clip['yuv_file'])
   input_num_frames = int(input_yuv_filesize / (6 * clip['width'] * clip['height'] / 4))
   target_encode_ms = float(input_num_frames) * 1000 / clip['fps']
