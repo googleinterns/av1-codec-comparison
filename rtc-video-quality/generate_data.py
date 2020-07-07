@@ -349,9 +349,11 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
     clip = job['clip']
     start_time = time.time()
     try:
-        process = subprocess.Popen(command,
+        process = subprocess.Popen(' '.join(command),
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+                                   stderr=subprocess.STDOUT,
+                                   encoding='utf-8',
+                                   shell=True)
     except OSError as e:
         return (None, "> %s\n%s" % (" ".join(command), e))
     (output, _) = process.communicate()
@@ -461,8 +463,11 @@ def generate_jobs(args, temp_dir):
                 job_temp_dir = tempfile.mkdtemp(dir=temp_dir)
                 (command, encoded_files) = get_encoder_command(job['encoder'])(
                     job, job_temp_dir)
-                command[0] = find_absolute_path(args.use_system_path,
-                                                command[0])
+                full_command = find_absolute_path(args.use_system_path,
+                                                  command[0])
+                command = [
+                    word.replace(command[0], full_command) for word in command
+                ]
                 jobs.append((job, (command, encoded_files), job_temp_dir))
     return jobs
 
