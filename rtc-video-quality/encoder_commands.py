@@ -71,7 +71,7 @@ def rav1e_command(job, temp_dir):
             '--keyint', '1'
         ]
 
-    command = [RAV1E_ENC_BIN] + codec_params + common_params
+    command = [binary_vars.RAV1E_ENC_BIN] + codec_params + common_params
 
     command = [str(flag) for flag in command]
 
@@ -127,7 +127,7 @@ def svt_command(job, temp_dir):
             '--preset', SVT_SPEED,
         ]
 
-    command = [SVT_ENC_BIN] + codec_params + common_params
+    command = [binary_vars.SVT_ENC_BIN] + codec_params + common_params
 
     command = [str(flag) for flag in command]
 
@@ -241,7 +241,7 @@ def aom_command(job, temp_dir):
             "--profile=0"
         ]
 
-    command = [AOM_ENC_BIN] + codec_params + common_params
+    command = [binary_vars.AOM_ENC_BIN] + codec_params + common_params
 
     encoded_files = [{'spatial-layer': 0,
                       'temporal-layer': 0, 'filename': encoded_filename}]
