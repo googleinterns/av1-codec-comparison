@@ -311,6 +311,11 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
     add_framestats(results_dict, metrics_framestats, float)
 
     if args.enable_vmaf:
+        (fd, results_file) = tempfile.mkstemp(
+            dir=temp_dir,
+            suffix="%s-%s-%d.json" %
+            (job['encoder'], job['codec'], job['qp_value']))
+        os.close(fd)
         vmaf_results = subprocess.check_output([
             binary_vars.VMAF_BIN, 'yuv420p',
             str(results_dict['width']),
@@ -318,12 +323,13 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
             '--out-fmt', 'json'
         ],
                                                encoding='utf-8')
-        vmaf_obj = json.loads(vmaf_results)
-        results_dict['vmaf'] = float(vmaf_obj['aggregate']['VMAF_score'])
+        with open(results_file, 'r') as results_file:
+            vmaf_obj = json.load(results_file)
+        results_dict['vmaf'] = float(vmaf_obj['VMAF score'])
 
         results_dict['frame-vmaf'] = []
         for frame in vmaf_obj['frames']:
-            results_dict['frame-vmaf'].append(frame['VMAF_score'])
+            results_dict['frame-vmaf'].append(frame['metrics']['vmaf'])
 
     layer_fps = clip['fps'] / temporal_divide
     results_dict['layer-fps'] = layer_fps
