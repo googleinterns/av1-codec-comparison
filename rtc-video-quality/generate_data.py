@@ -26,6 +26,7 @@ import sys
 import tempfile
 import threading
 import time
+import shlex
 
 from encoder_commands import *
 import binary_vars
@@ -349,7 +350,8 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
     clip = job['clip']
     start_time = time.time()
     try:
-        process = subprocess.Popen(' '.join(command),
+        process = subprocess.Popen(' '.join(
+            shlex.quote(arg) if arg != '&&' else arg for arg in command),
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT,
                                    encoding='utf-8',
