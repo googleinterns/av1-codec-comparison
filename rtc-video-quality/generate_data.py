@@ -468,7 +468,8 @@ def generate_jobs(args, temp_dir):
                 full_command = find_absolute_path(args.use_system_path,
                                                   command[0])
                 command = [
-                    word.replace(command[0], full_command) for word in command
+                    full_command if word == command[0] else word
+                    for word in command
                 ]
                 jobs.append((job, (command, encoded_files), job_temp_dir))
     return jobs
