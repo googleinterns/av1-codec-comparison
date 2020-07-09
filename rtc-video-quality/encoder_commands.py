@@ -95,6 +95,7 @@ def svt_command(job, temp_dir):
     fps = int(clip['fps'] + 0.5)
 
     common_params = [
+        '--profile', 0,
         '--fps', fps,
         '-w', clip['width'],
         '-h', clip['height'],
@@ -143,6 +144,10 @@ def svt_command(job, temp_dir):
             '--scm', 0,
             '--keyint', (INTRA_IVAL_LOW_LATENCY - 1),
             '--preset', SVT_SPEED,
+            '--tile-columns', 3,
+            '--enable-altrefs', 1,
+            '--altref-nframes', 7,
+            '--altref-strength', 5,
             '--input-stat-file', statfile
         ]
 
