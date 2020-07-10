@@ -62,7 +62,7 @@ def split_data(graph_data, attribute):
     if value not in groups:
       groups[value] = []
     groups[value].append(element)
-  return list(groups.values())
+  return groups.values()
 
 
 def normalize_bitrate_config_string(config):
@@ -173,6 +173,7 @@ def main():
     for f in args.graph_files:
         graph_data += ast.literal_eval(f.read())
     generate_stt(graph_data, args.out_dir)
+    #Generate images defined above, constant (change to true if images of graphs are wanted.)
     if not generate_images:
         return
     graph_dict = {}
@@ -235,8 +236,8 @@ def main():
 
     current_graph = 1
     total_graphs = len(graph_dict)
-    for (subdir, graph_name), lines in list(graph_dict.items()):
-        print(("[%d/%d] %s" % (current_graph, total_graphs, graph_name)))
+    for (subdir, graph_name), lines in graph_dict.items():
+        print("[%d/%d] %s" % (current_graph, total_graphs, graph_name))
         current_graph += 1
         metric = graph_name.split(':')[-1]
         fig, ax = plt.subplots()
