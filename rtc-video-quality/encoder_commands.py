@@ -50,7 +50,7 @@ def rav1e_command(job, temp_dir):
     ]
 
     if job['param'] == 'bitrate':
-        assert not job['target_bitrates_kbps']
+        assert len(job['target_bitrates_kbps'])
         param = [
             '--bitrate', job['target_bitrates_kbps'][-1]
         ]
@@ -114,7 +114,7 @@ def svt_command(job, temp_dir):
     ]
 
     if job['param'] == 'bitrate':
-        assert not job['target_bitrates_kbps']
+        assert len(job['target_bitrates_kbps'])
         param = [
             '--tbr', job['target_bitrates_kbps'][0],
             '--rc', 1
@@ -219,7 +219,7 @@ def aom_command(job, temp_dir):
     ]
 
     if job['param'] == 'bitrate':
-        assert not job['target_bitrates_kbps']
+        assert len(job['target_bitrates_kbps'])
         param = [
             '--target-bitrate=%d' % job['target_bitrates_kbps'][0],
             '--end-usage=cbr'
