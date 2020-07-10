@@ -417,7 +417,7 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
 
 
 def find_qp():
-    return [35, 40, 43, 46, 49, 50, 53, 55]
+    return [ 35, 40, 45, 48, 53, 55 ]
 
 
 def find_bitrates(width, height):
