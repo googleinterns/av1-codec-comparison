@@ -417,7 +417,7 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
 
 
 def find_qp():
-    return [ 35, 40, 45, 48, 53, 55 ]
+    return [35, 40, 45, 48, 53, 55]
 
 
 def find_bitrates(width, height):
@@ -508,10 +508,12 @@ def start_daemon(func):
 
 
 def job_to_string(job):
+    param = ":".join(str(i) for i in job['target_bitrates_kbps']
+                    ) if job['param'] == 'bitrate' else job['qp_value']
     return "%s:%s %dsl%dtl %s %s" % (
         job['encoder'], job['codec'], job['num_spatial_layers'],
-        job['num_temporal_layers'], ":".join(
-            str(i) for i in job['target_bitrates_kbps']),
+        job['num_temporal_layers'], 
+        param,
         os.path.basename(job['clip']['input_file']))
 
 
