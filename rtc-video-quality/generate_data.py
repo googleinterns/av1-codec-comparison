@@ -26,6 +26,7 @@ import sys
 import tempfile
 import threading
 import time
+import shlex
 
 from encoder_commands import *
 import binary_vars
@@ -311,6 +312,11 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
     add_framestats(results_dict, metrics_framestats, float)
 
     if args.enable_vmaf:
+        (fd, results_file) = tempfile.mkstemp(
+            dir=temp_dir,
+            suffix="%s-%s-%d.json" %
+            (job['encoder'], job['codec'], job['qp_value']))
+        os.close(fd)
         vmaf_results = subprocess.check_output([
             binary_vars.VMAF_BIN, 'yuv420p',
             str(results_dict['width']),
@@ -318,12 +324,13 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
             '--out-fmt', 'json'
         ],
                                                encoding='utf-8')
-        vmaf_obj = json.loads(vmaf_results)
-        results_dict['vmaf'] = float(vmaf_obj['aggregate']['VMAF_score'])
+        with open(results_file, 'r') as results_file:
+            vmaf_obj = json.load(results_file)
+        results_dict['vmaf'] = float(vmaf_obj['VMAF score'])
 
         results_dict['frame-vmaf'] = []
         for frame in vmaf_obj['frames']:
-            results_dict['frame-vmaf'].append(frame['VMAF_score'])
+            results_dict['frame-vmaf'].append(frame['metrics']['vmaf'])
 
     layer_fps = clip['fps'] / temporal_divide
     results_dict['layer-fps'] = layer_fps
@@ -349,9 +356,12 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
     clip = job['clip']
     start_time = time.time()
     try:
-        process = subprocess.Popen(command,
+        process = subprocess.Popen(' '.join(
+            shlex.quote(arg) if arg != '&&' else arg for arg in command),
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+                                   stderr=subprocess.STDOUT,
+                                   encoding='utf-8',
+                                   shell=True)
     except OSError as e:
         return (None, "> %s\n%s" % (" ".join(command), e))
     (output, _) = process.communicate()
@@ -463,8 +473,12 @@ def generate_jobs(args, temp_dir):
                 job_temp_dir = tempfile.mkdtemp(dir=temp_dir)
                 (command, encoded_files) = get_encoder_command(job['encoder'])(
                     job, job_temp_dir)
-                command[0] = find_absolute_path(args.use_system_path,
-                                                command[0])
+                full_command = find_absolute_path(args.use_system_path,
+                                                  command[0])
+                command = [
+                    full_command if word == command[0] else word
+                    for word in command
+                ]
                 jobs.append((job, (command, encoded_files), job_temp_dir))
     return jobs
 

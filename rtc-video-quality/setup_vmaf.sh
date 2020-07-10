@@ -23,7 +23,7 @@ fi
 # Check out the pinned vmaf version.
 pushd vmaf
 git fetch
-git checkout --detach 45c57f7b67cebc301d85715669b9126063903ac2
+git checkout --detach a635ff6d5e6fd363d2ff0a81035af938a5fc163a
 
 # Build vmaf
 make -j32
