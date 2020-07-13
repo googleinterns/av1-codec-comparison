@@ -140,6 +140,7 @@ def positive_int(num):
 
 parser = argparse.ArgumentParser(
     description='Generate graph data for video-quality comparison.')
+parser.add_argument('--enable-bitrate', action='store_true')
 parser.add_argument('clips',
                     nargs='+',
                     metavar='clip_WIDTH_HEIGHT.yuv:FPS|clip.y4m',
@@ -341,14 +342,13 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
     results_dict['layer-width'] = results_dict['width'] // spatial_divide
     results_dict['layer-height'] = results_dict['height'] // spatial_divide
 
-    target_bitrate_bps = job['target_bitrates_kbps'][
-        encoded_file['temporal-layer']] * 1000
+    # target_bitrate_bps = job['target_bitrates_kbps'][
+    #     encoded_file['temporal-layer']] * 1000
     bitrate_used_bps = os.path.getsize(
         encoded_file['filename']) * 8 * layer_fps / layer_frames
-    results_dict['target-bitrate-bps'] = target_bitrate_bps
+    # results_dict['target-bitrate-bps'] = target_bitrate_bps
     results_dict['actual-bitrate-bps'] = bitrate_used_bps
-    results_dict['bitrate-utilization'] = float(
-        bitrate_used_bps) / target_bitrate_bps
+    results_dict['bitrate-utilization'] = float(bitrate_used_bps)
 
 
 def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
@@ -379,7 +379,8 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
         results_dict['input-file-sha1sum'] = clip['sha1sum']
         results_dict['input-total-frames'] = clip['input_total_frames']
         results_dict['frame-offset'] = args.frame_offset
-        results_dict['bitrate-config-kbps'] = job['target_bitrates_kbps']
+        # results_dict['param'] = job['param']
+        # results_dict['bitrate-config-kbps'] = job['target_bitrates_kbps']
         results_dict['layer-pattern'] = "%dsl%dtl" % (
             job['num_spatial_layers'], job['num_temporal_layers'])
         results_dict['encoder'] = job['encoder']
@@ -398,11 +399,12 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
 
         generate_metrics(results_dict, job, job_temp_dir, layer)
         if encoded_file_dir:
+            param = job['qp_value'] if job['param'] == 'qp' else job[
+                'target_bitrates_kbps'][-1]
             encoded_file_pattern = "%s-%s-%s-%dsl%dtl-%d-sl%d-tl%d%s" % (
-                os.path.splitext(os.path.basename(
-                    clip['input_file']))[0], job['encoder'], job['codec'],
-                job['num_spatial_layers'], job['num_temporal_layers'],
-                job['target_bitrates_kbps'][-1], layer['spatial-layer'],
+                os.path.splitext(os.path.basename(clip['input_file']))[0],
+                job['encoder'], job['codec'], job['num_spatial_layers'],
+                job['num_temporal_layers'], param, layer['spatial-layer'],
                 layer['temporal-layer'], os.path.splitext(layer['filename'])[1])
             shutil.move(layer['filename'],
                         os.path.join(encoded_file_dir, encoded_file_pattern))
@@ -412,6 +414,10 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
     shutil.rmtree(job_temp_dir)
 
     return (results, output)
+
+
+def find_qp():
+    return [35, 40, 45, 48, 53, 55]
 
 
 def find_bitrates(width, height):
@@ -452,24 +458,39 @@ def split_temporal_bitrates_kbps(target_bitrate_kbps, num_temporal_layers):
 def generate_jobs(args, temp_dir):
     jobs = []
     for clip in args.clips:
-        bitrates = find_bitrates(clip['width'], clip['height'])
-        for bitrate_kbps in bitrates:
+
+        params = find_bitrates(
+            clip['width'],
+            clip['height']) if args.enable_bitrate else find_qp()
+
+        for param in params:
             for (encoder, codec) in args.encoders:
+
                 job = {
-                    'encoder':
-                        encoder,
-                    'codec':
-                        codec,
-                    'clip':
-                        clip,
-                    'target_bitrates_kbps':
-                        split_temporal_bitrates_kbps(bitrate_kbps,
-                                                     args.num_temporal_layers),
-                    'num_spatial_layers':
-                        args.num_spatial_layers,
-                    'num_temporal_layers':
-                        args.num_temporal_layers,
+                    'encoder': encoder,
+                    'codec': codec,
+                    'clip': clip,
+                    'num_spatial_layers': args.num_spatial_layers,
+                    'num_temporal_layers': args.num_temporal_layers,
                 }
+
+                if args.enable_bitrate:
+                    job.update({
+                        'param':
+                            'bitrate',
+                        'qp_value':
+                            -1,
+                        'target_bitrates_kbps':
+                            split_temporal_bitrates_kbps(
+                                param, args.num_temporal_layers)
+                    })
+                else:
+                    job.update({
+                        'param': 'qp',
+                        'qp_value': param,
+                        'target_bitrates_kbps': []
+                    })
+
                 job_temp_dir = tempfile.mkdtemp(dir=temp_dir)
                 (command, encoded_files) = get_encoder_command(job['encoder'])(
                     job, job_temp_dir)
@@ -491,10 +512,11 @@ def start_daemon(func):
 
 
 def job_to_string(job):
+    param = ":".join(str(i) for i in job['target_bitrates_kbps']
+                    ) if job['param'] == 'bitrate' else job['qp_value']
     return "%s:%s %dsl%dtl %s %s" % (
         job['encoder'], job['codec'], job['num_spatial_layers'],
-        job['num_temporal_layers'], ":".join(
-            str(i) for i in job['target_bitrates_kbps']),
+        job['num_temporal_layers'], param,
         os.path.basename(job['clip']['input_file']))
 
 

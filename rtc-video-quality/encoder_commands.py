@@ -46,9 +46,19 @@ def rav1e_command(job, temp_dir):
     common_params = [
         '-y',
         '--output', encoded_filename,
-        '--bitrate', job['target_bitrates_kbps'][0],
         clip['y4m_file']
     ]
+
+    if job['param'] == 'bitrate':
+        assert len(job['target_bitrates_kbps'])
+        control_params = [
+            '--bitrate', job['target_bitrates_kbps'][-1]
+        ]
+    else:
+        assert job['qp_value'] != -1
+        control_params = [
+            '--quantizer', (job['qp_value'] * 4)
+        ]
 
 
     encoder = job['encoder']
@@ -71,7 +81,7 @@ def rav1e_command(job, temp_dir):
             '--keyint', '1'
         ]
 
-    command = [binary_vars.RAV1E_ENC_BIN] + codec_params + common_params
+    command = [binary_vars.RAV1E_ENC_BIN] + codec_params + control_params + common_params
 
     command = [str(flag) for flag in command]
 
@@ -101,8 +111,23 @@ def svt_command(job, temp_dir):
         '-h', clip['height'],
         '-i', clip['yuv_file'],
         '-b', encoded_filename,
-        '--tbr', job['target_bitrates_kbps'][0]
     ]
+
+    if job['param'] == 'bitrate':
+        assert len(job['target_bitrates_kbps'])
+        control_params = [
+            '--tbr', job['target_bitrates_kbps'][0],
+            '--rc', 1
+        ]
+    else:
+        assert job['qp_value'] != -1
+        control_params = [
+            '--rc', '0',
+            '-q', job['qp_value'],
+            '--min-qp', job['qp_value'],
+            '--max-qp', (job['qp_value'] + 8),
+            '--keyint', (INTRA_IVAL_LOW_LATENCY - 1)
+        ]
 
     encoder = job['encoder']
 
@@ -152,14 +177,14 @@ def svt_command(job, temp_dir):
         ]
 
     if 'offline' in encoder:
-        first_pass_command = [ binary_vars.SVT_ENC_BIN ] + first_pass_params + common_params
-        second_pass_command = [ binary_vars.SVT_ENC_BIN ] + second_pass_params + common_params
+        first_pass_command = [ binary_vars.SVT_ENC_BIN ] + first_pass_params + control_params + common_params
+        second_pass_command = [ binary_vars.SVT_ENC_BIN ] + second_pass_params + control_params + common_params
 
         command = first_pass_command + ['&&'] + second_pass_command
 
     else:
 
-        command = [binary_vars.SVT_ENC_BIN] + codec_params + common_params
+        command = [binary_vars.SVT_ENC_BIN] + codec_params + control_params + common_params
 
     command = [str(flag) for flag in command]
 
@@ -190,9 +215,22 @@ def aom_command(job, temp_dir):
         '--width=%d' % clip['width'],
         '--height=%d' % clip['height'],
         '--output=%s' % encoded_filename,
-        '--target-bitrate=%d' % job['target_bitrates_kbps'][0],
         clip['yuv_file']
     ]
+
+    if job['param'] == 'bitrate':
+        assert len(job['target_bitrates_kbps'])
+        control_params = [
+            '--target-bitrate=%d' % job['target_bitrates_kbps'][0],
+            '--end-usage=cbr'
+        ]
+    else:
+        assert job['qp_value'] != -1
+        control_params = [
+            '--min-q=%d' % job['qp_value'],
+            '--max-q=%d' % (job['qp_value'] + 8),
+            '--end-usage=q'
+        ]
 
     encoder = job['encoder']
 
@@ -273,7 +311,7 @@ def aom_command(job, temp_dir):
             "--profile=0"
         ]
 
-    command = [binary_vars.AOM_ENC_BIN] + codec_params + common_params
+    command = [binary_vars.AOM_ENC_BIN] + codec_params + control_params + common_params
 
     encoded_files = [{'spatial-layer': 0,
                       'temporal-layer': 0, 'filename': encoded_filename}]
