@@ -458,35 +458,39 @@ def split_temporal_bitrates_kbps(target_bitrate_kbps, num_temporal_layers):
 def generate_jobs(args, temp_dir):
     jobs = []
     for clip in args.clips:
-        bitrates = find_bitrates(clip['width'], clip['height'])
-        qp_values = find_qp()
 
-        if args.enable_bitrate:
-            params = bitrates
-        else:
-            params = qp_values
+        params = find_bitrates(
+            clip['width'],
+            clip['height']) if args.enable_bitrate else find_qp()
+
         for param in params:
             for (encoder, codec) in args.encoders:
+
                 job = {
-                    'param':
-                        'bitrate' if args.enable_bitrate else 'qp',
-                    'encoder':
-                        encoder,
-                    'codec':
-                        codec,
-                    'clip':
-                        clip,
-                    'qp_value':
-                        param if not args.enable_bitrate else -1,
-                    'target_bitrates_kbps':
-                        split_temporal_bitrates_kbps(param,
-                                                     args.num_temporal_layers)
-                        if args.enable_bitrate else [],
-                    'num_spatial_layers':
-                        args.num_spatial_layers,
-                    'num_temporal_layers':
-                        args.num_temporal_layers,
+                    'encoder': encoder,
+                    'codec': codec,
+                    'clip': clip,
+                    'num_spatial_layers': args.num_spatial_layers,
+                    'num_temporal_layers': args.num_temporal_layers,
                 }
+
+                if args.enable_bitrate:
+                    job.update({
+                        'param':
+                            'bitrate',
+                        'qp_value':
+                            -1,
+                        'target_bitrates_kbps':
+                            split_temporal_bitrates_kbps(
+                                param, args.num_temporal_layers)
+                    })
+                else:
+                    job.update({
+                        'param': 'qp',
+                        'qp_value': param,
+                        'target_bitrates_kbps': []
+                    })
+
                 job_temp_dir = tempfile.mkdtemp(dir=temp_dir)
                 (command, encoded_files) = get_encoder_command(job['encoder'])(
                     job, job_temp_dir)
@@ -512,8 +516,7 @@ def job_to_string(job):
                     ) if job['param'] == 'bitrate' else job['qp_value']
     return "%s:%s %dsl%dtl %s %s" % (
         job['encoder'], job['codec'], job['num_spatial_layers'],
-        job['num_temporal_layers'], 
-        param,
+        job['num_temporal_layers'], param,
         os.path.basename(job['clip']['input_file']))
 
 
