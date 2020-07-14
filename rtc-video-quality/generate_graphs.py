@@ -86,7 +86,8 @@ def generate_stt(data, output_dir=''):
           'glb-psnr-v',
           'encode-time-utilization',
           'actual-encode-time-ms',
-          'vmaf'
+          'vmaf',
+          'psnr-dmos'
         ]
   encoder_codecs = set([(item['encoder'], item['codec']) for item in data])
   videos = set([item['input-file'] for item in data])
