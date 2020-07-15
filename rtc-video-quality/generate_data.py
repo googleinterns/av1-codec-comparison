@@ -106,9 +106,7 @@ def clip_arg(clip):
     }
 
 def psnr_to_dmos(score):
-    # DMOS = 1 - 1 / (1 + math.exp((-0.1657) * (score + (-26.19))))
-    v = (1 - 1 / (1 + math.exp((-0.1657 * (score + -26.19)))))
-    return v
+    return 1 - 1 / (1 + math.exp(-0.1657 * (score + -26.19)))
 
 def encoder_pairs(string):
     pair_pattern = re.compile(r"^([\w\-]+):(\w+)$")
