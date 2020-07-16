@@ -258,12 +258,13 @@ function query_file() {
   metricdata = new google.visualization.DataTable(metricjson, 0.6);
   if( metricView != 0 ) delete metricView;
   metricView = new google.visualization.DataView(metricdata);
+  var vAxisTitle = metrics[column] in metricToUnit ? metricToUnit[metrics[column]] : 'Output';
   chart.draw(metricView, {curveType:'function',
       explorer: {},
       chartArea:{left:chart_left, top:chart_top, width:chart_width,
       height:chart_height-90},
       hAxis:{title:"Datarate in kbps"},
-      vAxis:{title:metricToUnit[metrics[column]], format: '##.0', textPosition: 'in'},
+      vAxis:{title:vAxisTitle, format: '##.0', textPosition: 'in'},
       legend:{position:"in"}, title:imagestr, pointSize:2, lineWidth:1,
       width:chart_width, height:chart_height-50 });
 
