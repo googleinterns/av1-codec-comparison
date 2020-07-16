@@ -27,6 +27,7 @@ import tempfile
 import threading
 import time
 import shlex
+import math
 
 from encoder_commands import *
 import binary_vars
@@ -104,6 +105,8 @@ def clip_arg(clip):
         'file_type': 'yuv'
     }
 
+def psnr_to_dmos(score):
+    return 1 - 1 / (1 + math.exp(-0.1657 * (score + -26.19)))
 
 def encoder_pairs(string):
     pair_pattern = re.compile(r"^([\w\-]+):(\w+)$")
@@ -307,7 +310,7 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
         elif metric == 'Nframes':
             layer_frames = int(value)
             results_dict['frame-count'] = layer_frames
-
+    results_dict['psnr-dmos'] = psnr_to_dmos(results_dict['avg-psnr'])
     if decoder_framestats:
         add_framestats(results_dict, decoder_framestats, int)
     add_framestats(results_dict, metrics_framestats, float)
@@ -439,8 +442,9 @@ def find_bitrates(width, height):
     if pixel_bound <= 1280 * 720:
         return [400, 600, 800, 1000, 1200, 1400]
     if pixel_bound <= 1920 * 1080:
-        return [800, 1200, 2000, 3000, 5000, 10000]
-    return [1200, 1800, 3000, 6000, 10000, 15000]
+        return [800, 1200, 1600, 2000, 2400, 2800]
+    return [1200, 1800, 2400, 3000, 3600, 4200]
+
 
 
 layer_bitrates = [[1], [0.6, 1], [0.45, 0.65, 1]]
