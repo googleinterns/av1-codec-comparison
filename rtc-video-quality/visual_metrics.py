@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Copyright (c) 2016, Alliance for Open Media. All rights reserved
 #
@@ -460,3 +460,10 @@ def HandleFiles(variables):
       formatters = "%s   formatter.format(better, %d);" % (formatters, i+1)
 
   return FillForm(page_template, vars())
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+      print(HandleFiles.__doc__)
+    else:
+      print(HandleFiles(sys.argv))
+      
