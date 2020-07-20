@@ -29,4 +29,4 @@ mkdir -p aom_build
 pushd aom_build
 # Build aom
 cmake ../
-make
+make -j32
