@@ -1,0 +1,38 @@
+name: AV1 Codec Comparison Continuous Integration
+
+on:
+    pull_request:
+        branches: [ master ]
+
+jobs:
+    setup:
+        runs-on: ubuntu-20.04
+        steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-python@v2
+          with:
+            python-version: '3.x'
+        - uses: actions-rs/toolchain@v1
+          with:
+            profile: minimal
+            toolchain: stable
+        - name : Install apt-get dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y gcc cmake yasm nasm wget mediainfo ffmpeg
+        - name : Setup codec tools
+          run: |
+            cd rtc-video-quality
+            ./setup.sh && ./setup_aom.sh && ./setup_rav1e.sh && ./setup_svt-av1.sh
+        - name : Install requirements.txt 
+          run : pip install -r rtc-video-quality/requirements.txt
+        - name : Download test set
+          run : wget https://media.xiph.org/video/derf/y4m/claire_qcif-5.994Hz.y4m -O rtc-video-quality/claire_qcif.y4m
+        - name : Run codec script
+          run: |
+            cd rtc-video-quality
+            ./generate_data.py --single-datapoint --encoders=aom-rt:av1,svt-rt:av1,rav1e-rt:av1,aom-offline:av1,svt-offline:av1 --out out.txt claire_qcif.y4m
+        - name : Generate metrics 
+          run: | 
+              cd rtc-video-quality
+              mkdir -p testing && ./generate_graphs.py --out-dir testing out.txt
