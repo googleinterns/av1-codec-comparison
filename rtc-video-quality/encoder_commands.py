@@ -142,14 +142,12 @@ def svt_command(job, temp_dir):
             '--scm', 0,
             '--lookahead', 0,
             '--preset', SVT_RT_SPEED,
-            '--keyint', (INTRA_IVAL_LOW_LATENCY - 1)
         ]
 
     elif encoder == 'svt-all_intra':
 
         codec_params = [
             '--scm', 0,
-            '--keyint', 0,
             '--preset', SVT_SPEED,
         ]
 
@@ -160,14 +158,12 @@ def svt_command(job, temp_dir):
 
         first_pass_params = [
             '--scm', 0,
-            '--keyint', (INTRA_IVAL_LOW_LATENCY -1),
             '--preset', 8,
             '--output-stat-file', statfile
         ]
 
         second_pass_params = [
             '--scm', 0,
-            '--keyint', (INTRA_IVAL_LOW_LATENCY - 1),
             '--preset', SVT_SPEED,
             '--tile-columns', 3,
             '--enable-altrefs', 1,
