@@ -105,8 +105,10 @@ def clip_arg(clip):
         'file_type': 'yuv'
     }
 
+
 def psnr_to_dmos(score):
     return 1 - 1 / (1 + math.exp(-0.1657 * (score + -26.19)))
+
 
 def encoder_pairs(string):
     pair_pattern = re.compile(r"^([\w\-]+):(\w+)$")
@@ -148,6 +150,7 @@ parser.add_argument('clips',
                     nargs='+',
                     metavar='clip_WIDTH_HEIGHT.yuv:FPS|clip.y4m',
                     type=clip_arg)
+parser.add_argument('--single-datapoint', action='store_true')
 parser.add_argument('--dump-commands', action='store_true')
 parser.add_argument('--enable-vmaf', action='store_true')
 parser.add_argument('--encoded-file-dir', default=None, type=writable_dir)
@@ -420,6 +423,8 @@ def run_command(job, encoder_command, job_temp_dir, encoded_file_dir):
 
 
 def find_qp():
+    if args.single_datapoint:
+        return [55]
     return [35, 40, 45, 48, 53, 55]
 
 
@@ -444,7 +449,6 @@ def find_bitrates(width, height):
     if pixel_bound <= 1920 * 1080:
         return [800, 1200, 1600, 2000, 2400, 2800]
     return [1200, 1800, 2400, 3000, 3600, 4200]
-
 
 
 layer_bitrates = [[1], [0.6, 1], [0.45, 0.65, 1]]
