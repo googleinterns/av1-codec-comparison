@@ -35,7 +35,7 @@ def rav1e_command(job, temp_dir):
     assert job['num_spatial_layers'] == 1
     assert job['num_temporal_layers'] == 1
     assert job['codec'] == 'av1'
-    assert job['encoder'] in ['rav1e-1pass', 'rav1e-rt', 'rav1e-all_intra']
+    assert job['encoder'] in ['rav1e-1pass', 'rav1e-rt', 'rav1e-all_intra', 'rav1e-offline']
 
     (fd, encoded_filename) = tempfile.mkstemp(dir=temp_dir, suffix=".ivf")
     os.close(fd)
@@ -80,8 +80,29 @@ def rav1e_command(job, temp_dir):
             '--speed', '4',
             '--keyint', '1'
         ]
+    if encoder == 'rav1e-offline':
+        pass1_params = [
+            '--low-latency',
+            '--speed', 8,
+            '--first-pass', statfile
+        ]
+ 
+        pass2_params = [
+            '--second-pass', statfile,
+            '--keyint', INTRA_IVAL_LOW_LATENCY,
+            '--speed', RAV1E_SPEED
+        ]
+ 
 
-    command = [binary_vars.RAV1E_ENC_BIN] + codec_params + control_params + common_params
+    if 'offline' in encoder:
+        first_pass_command = [binary_vars.RAV1E_ENC_BIN] + pass1_params + control_params + common_params
+        second_pass_command = [binary_vars.RAV1E_ENC_BIN] + pass2_params + control_params + common_params
+ 
+        command = first_pass_command  + ['&&'] +  second_pass_command
+        command = [str(flag) for flag in command]
+    else:
+        command = [binary_vars.RAV1E_ENC_BIN] + codec_params + control_params + common_params
+
 
     command = [str(flag) for flag in command]
 
@@ -475,7 +496,7 @@ def yami_command(job, temp_dir):
 def get_encoder_command(encoder):
     encoders = [
         'aom-good', 'aom-rt', 'aom-all_intra', 'aom-offline', ## AOM CONFIGS
-        'rav1e-1pass', 'rav1e-rt', 'rav1e-all_intra', ## RAV1E CONFIGS
+        'rav1e-1pass', 'rav1e-rt', 'rav1e-all_intra', 'rav1e-offline', ## RAV1E CONFIGS
         'svt-1pass', 'svt-rt', 'svt-all_intra', 'svt-offline', ## SVT CONFIGS
         'openh264', ## OPENH264 CONFIGS
         'libvpx-rt', ## LIBVPX CONFIGS
