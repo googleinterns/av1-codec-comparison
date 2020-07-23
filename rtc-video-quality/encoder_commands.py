@@ -40,6 +40,9 @@ def rav1e_command(job, temp_dir):
     (fd, encoded_filename) = tempfile.mkstemp(dir=temp_dir, suffix=".ivf")
     os.close(fd)
 
+    (fd, statfile) = tempfile.mkstemp(dir=temp_dir, suffix=".stat")
+    os.close(fd)
+
     clip = job['clip']
     fps = int(clip['fps'] + 0.5)
 
@@ -82,7 +85,6 @@ def rav1e_command(job, temp_dir):
         ]
     if encoder == 'rav1e-offline':
         pass1_params = [
-            '--low-latency',
             '--speed', 8,
             '--first-pass', statfile
         ]
