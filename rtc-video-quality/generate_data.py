@@ -320,13 +320,8 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
             suffix="%s-%s-%d.json" %
             (job['encoder'], job['codec'], job['qp_value']))
         os.close(fd)
-        vmaf_results = subprocess.check_output([
-            binary_vars.VMAF_BIN, 'yuv420p',
-            str(results_dict['width']),
-            str(results_dict['height']), clip['yuv_file'], decoded_file,
-            '--out-fmt', 'json'
-        ],
-                                               encoding='utf-8')
+        vmaf_results = subprocess.check_output(['vmaf/libvmaf/build/tools/vmafossexec', 'yuv420p', str(results_dict['width']), str(
+            results_dict['height']), clip['yuv_file'], decoded_file, 'vmaf/model/vmaf_v0.6.1.pkl', '--log-fmt', 'json', '--log', results_file], encoding='utf-8')
         with open(results_file, 'r') as results_file:
             vmaf_obj = json.load(results_file)
         results_dict['vmaf'] = float(vmaf_obj['VMAF score'])
