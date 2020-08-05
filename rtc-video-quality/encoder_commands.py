@@ -85,14 +85,18 @@ def rav1e_command(job, temp_dir):
         ]
     if encoder == 'rav1e-offline':
         pass1_params = [
-            '--speed', 8,
-            '--first-pass', statfile
+            '--speed', '10',
+            '--tiles', 8,
+            '--tune', 'Psychovisual',
+            '--first-pass', statfile,
+
+
         ]
  
         pass2_params = [
             '--second-pass', statfile,
-            '--keyint', INTRA_IVAL_LOW_LATENCY,
-            '--speed', RAV1E_SPEED
+            '--keyint', '60',
+            '--speed', '4'
         ]
  
 
@@ -327,7 +331,7 @@ def aom_command(job, temp_dir):
             "--overshoot-pct=25",
             "--frame-parallel=1",
             "--tile-columns=3",
-            "--profile=0"
+            "--profile=0",
         ]
 
     command = [binary_vars.AOM_ENC_BIN] + codec_params + control_params + common_params

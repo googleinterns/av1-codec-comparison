@@ -29,7 +29,7 @@ fi
 ## Check out the pinned rav1e version
 pushd rav1e
 git fetch 
-git checkout --detach 99114995e8771dd923a146e5616f7474e9b33eb7
+git checkout --detach c200bc2ead27367bb4f46d3ce10385e50fde901f
 
 ## Build rav1e
 cargo build --release
