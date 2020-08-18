@@ -65,7 +65,7 @@ yuv_clip_pattern = re.compile(r"^(.*[\._](\d+)_(\d+).yuv):(\d+)$")
 
 def clip_arg(clip):
     (file_root, file_ext) = os.path.splitext(clip)
-    if file_ext == '.y4m':
+    if file_ext != '.yuv':
         width = int(
             subprocess.check_output(
                 ["mediainfo", "--Inform=Video;%Width%", clip],
@@ -176,34 +176,34 @@ parser.add_argument('--workers', type=int, default=multiprocessing.cpu_count())
 
 def prepare_clips(args, temp_dir):
     clips = args.clips
-    y4m_clips = [clip for clip in clips if clip['file_type'] == 'y4m']
-    if y4m_clips:
-        print("Converting %d .y4m clip%s..." %
-              (len(y4m_clips), "" if len(y4m_clips) == 1 else "s"))
-        for clip in y4m_clips:
+    non_yuv_clips = [clip for clip in clips if clip['file_type'] != '.yuv']
+
+    # Convert all non yuv clips to yuv using ffmpeg
+    if non_yuv_clips:
+        print("Converting %d clip%s to yuv..." %
+              (len(non_yuv_clips), "" if len(non_yuv_clips) == 1 else "s"))
+        for clip in non_yuv_clips:
             (fd, yuv_file) = tempfile.mkstemp(dir=temp_dir,
-                                              suffix=".%d_%d.yuv" %
-                                              (clip['width'], clip['height']))
+                                              suffix=".%d_%d.yuv" % (clip['width'], clip['height']))
             os.close(fd)
             with open(os.devnull, 'w') as devnull:
                 subprocess.check_call(
-                    ['ffmpeg', '-y', '-i', clip['input_file'], yuv_file],
-                    stdout=devnull,
-                    stderr=devnull,
-                    encoding='utf-8')
+                    ['ffmpeg', '-y', '-i', clip['input_file'], yuv_file], stdout=devnull, stderr=devnull)
             clip['yuv_file'] = yuv_file
+
+    # Get sha1sum of file and other metadata
     for clip in clips:
         clip['sha1sum'] = subprocess.check_output(
             ['sha1sum', clip['input_file']], encoding='utf-8').split(' ', 1)[0]
         if 'yuv_file' not in clip:
             clip['yuv_file'] = clip['input_file']
-        frame_size = 6 * clip['width'] * clip['height'] / 4
+        frame_size = int(6 * clip['width'] * clip['height'] / 4)
         input_yuv_filesize = os.path.getsize(clip['yuv_file'])
         clip['input_total_frames'] = input_yuv_filesize / frame_size
         # Truncate file if necessary.
         if args.frame_offset > 0 or args.num_frames > 0:
-            (fd, truncated_filename) = tempfile.mkstemp(dir=temp_dir,
-                                                        suffix=".yuv")
+            (fd, truncated_filename) = tempfile.mkstemp(
+                dir=temp_dir, suffix=".yuv")
             blocksize = 2048 * 1024
             total_filesize = args.num_frames * frame_size
             with os.fdopen(fd, 'wb', blocksize) as truncated_file:
@@ -211,8 +211,7 @@ def prepare_clips(args, temp_dir):
                     original_file.seek(args.frame_offset * frame_size)
                     while total_filesize > 0:
                         data = original_file.read(
-                            blocksize
-                            if blocksize < total_filesize else total_filesize)
+                            blocksize if blocksize < total_filesize else total_filesize)
                         truncated_file.write(data)
                         total_filesize -= blocksize
             clip['yuv_file'] = truncated_filename
@@ -221,14 +220,11 @@ def prepare_clips(args, temp_dir):
         os.close(fd)
 
         with open(os.devnull, 'w') as devnull:
-            subprocess.check_call([
-                'ffmpeg', '-y', '-s',
-                '%dx%d' % (clip['width'], clip['height']), '-r',
-                str(int(clip['fps'] + 0.5)), '-pix_fmt', 'yuv420p', '-i',
-                clip['yuv_file'], y4m_file
-            ],
-                                  stdout=devnull,
-                                  stderr=devnull)
+            subprocess.check_call(
+                ['ffmpeg', '-y', '-s', '%dx%d' % (clip['width'], clip['height']), '-r', str(int(clip['fps'] + 0.5)), '-pix_fmt', 'yuv420p', '-i', clip['yuv_file'], y4m_file],
+                stdout=devnull,
+                stderr=devnull
+            )
 
         clip['y4m_file'] = y4m_file
 
@@ -324,13 +320,8 @@ def generate_metrics(results_dict, job, temp_dir, encoded_file):
             suffix="%s-%s-%d.json" %
             (job['encoder'], job['codec'], job['qp_value']))
         os.close(fd)
-        vmaf_results = subprocess.check_output([
-            binary_vars.VMAF_BIN, 'yuv420p',
-            str(results_dict['width']),
-            str(results_dict['height']), clip['yuv_file'], decoded_file,
-            '--out-fmt', 'json'
-        ],
-                                               encoding='utf-8')
+        vmaf_results = subprocess.check_output(['vmaf/libvmaf/build/tools/vmafossexec', 'yuv420p', str(results_dict['width']), str(
+            results_dict['height']), clip['yuv_file'], decoded_file, 'vmaf/model/vmaf_v0.6.1.pkl', '--log-fmt', 'json', '--log', results_file], encoding='utf-8')
         with open(results_file, 'r') as results_file:
             vmaf_obj = json.load(results_file)
         results_dict['vmaf'] = float(vmaf_obj['VMAF score'])
