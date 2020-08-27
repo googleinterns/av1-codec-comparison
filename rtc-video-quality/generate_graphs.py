@@ -116,8 +116,16 @@ def generate_stt(data, output_dir=''):
 
 
         filtered_item = list(filter(lambda item: item['encoder'] == encoder and item['codec'] == codec and item['input-file'] == video and bitrate == item['actual-bitrate-bps'], data))
-        assert len(filtered_item ) == 1
-        item = filtered_item[0]
+            
+        for item in filtered_item:
+
+            ## Filter my dictionary to contain the required key values
+            required_data = OrderedDict()
+            required_data['bitrate'] = str(bitrate)
+            for key in metrics:
+                if key in item:
+                    required_data[key] = "{:.2f}".format(item[key])
+
 
         ## Filter my dictionary to contain the required key values
         required_data = OrderedDict()
