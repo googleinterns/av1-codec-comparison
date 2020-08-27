@@ -126,14 +126,6 @@ def generate_stt(data, output_dir=''):
                 if key in item:
                     required_data[key] = "{:.2f}".format(item[key])
 
-
-        ## Filter my dictionary to contain the required key values
-        required_data = OrderedDict()
-        required_data['bitrate'] = str(bitrate)
-        for key in metrics:
-          if key in item:
-            required_data[key] = "{:.2f}".format(item[key])
-
         header = '\t'.join(required_data.keys()) + '\n'
         values = '\t'.join(required_data.values()) + '\n'
 
