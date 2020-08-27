@@ -20,6 +20,7 @@ from visual_metrics import HandleFiles
 from collections import OrderedDict
 import matplotlib.pyplot as plt
 import os
+import sys
 import re
 
 layer_regex_pattern = re.compile(r"^(\d)sl(\d)tl$")
@@ -116,6 +117,11 @@ def generate_stt(data, output_dir=''):
 
 
         filtered_item = list(filter(lambda item: item['encoder'] == encoder and item['codec'] == codec and item['input-file'] == video and bitrate == item['actual-bitrate-bps'], data))
+           
+        if len(filtered_item) != 1:
+            print("WARNING: %s was encoded with %s:%s using different target bitrates but has the same actual bitrate" 
+                  % (item['input-file'], item['encoder'], item['codec']),
+                  file=sys.stderr)
             
         for item in filtered_item:
 
