@@ -31,8 +31,10 @@ jobs:
         - name : Run codec script
           run: |
             cd rtc-video-quality
-            ./generate_data.py --single-datapoint --encoders=aom-rt:av1,svt-rt:av1,rav1e-rt:av1,aom-offline:av1,svt-offline:av1 --out out.txt claire_qcif.y4m
+            ./generate_data.py --encoders=aom-rt:av1,svt-rt:av1,rav1e-rt:av1,aom-offline:av1,svt-offline:av1 --out out.txt claire_qcif.y4m
+            ./generate_data.py --encoders=aom-rt:av1,svt-rt:av1,rav1e-rt:av1,aom-offline:av1,svt-offline:av1,rav1e-offline:av1 --out out-bitrate.txt claire_qcif.y4m --enable-bitrate
         - name : Generate metrics 
           run: | 
               cd rtc-video-quality
               mkdir -p testing && ./generate_graphs.py --out-dir testing out.txt
+              mkdir -p testing-bitrate && ./generate_graphs.py --out-dir testing-bitrate out-bitrate.txt
