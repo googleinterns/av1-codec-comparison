@@ -1,0 +1,17 @@
+diff --git a/Source/Lib/Encoder/Codec/EbEncInterPrediction.c b/Source/Lib/Encoder/Codec/EbEncInterPrediction.c
+index d9546f3f..1b8cafd3 100644
+--- a/Source/Lib/Encoder/Codec/EbEncInterPrediction.c
++++ b/Source/Lib/Encoder/Codec/EbEncInterPrediction.c
+@@ -498,7 +498,11 @@ static void pick_wedge(PictureControlSet *picture_control_set_ptr, ModeDecisionC
+ 
+     av1_wedge_compute_delta_squares(ds, residual0, residual1, N);
+ 
+-    for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
++    int8_t total_wedges = 8;
++    int8_t wedges[8] = {7, 6, 2, 1, 14, 8, 15, 5};
++
++    for (int8_t i = 0; i < total_wedges; ++i) {
++        wedge_index = wedges[i];
+         mask = av1_get_contiguous_soft_mask(wedge_index, 0, bsize);
+ 
+         wedge_sign = av1_wedge_sign_from_residuals(ds, mask, N, sign_limit);
