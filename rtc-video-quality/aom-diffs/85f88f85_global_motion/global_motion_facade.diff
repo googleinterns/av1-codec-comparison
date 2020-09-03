@@ -1,0 +1,13 @@
+diff --git a/av1/encoder/global_motion_facade.c b/av1/encoder/global_motion_facade.c
+index a502ed0ed..280f2c77c 100644
+--- a/av1/encoder/global_motion_facade.c
++++ b/av1/encoder/global_motion_facade.c
+@@ -115,7 +115,7 @@ static AOM_INLINE void compute_global_motion_for_ref_frame(
+               abs(ref_frame_dist) <= 2 && do_adaptive_gm_estimation
+           ? GLOBAL_MOTION_DISFLOW_BASED
+           : GLOBAL_MOTION_FEATURE_BASED;
+-  for (model = ROTZOOM; model < GLOBAL_TRANS_TYPES_ENC; ++model) {
++  for (model = TRANSLATION; model <= GLOBAL_TRANS_TYPES_ENC; ++model) {
+     int64_t best_warp_error = INT64_MAX;
+     // Initially set all params to identity.
+     for (i = 0; i < RANSAC_NUM_MOTIONS; ++i) {

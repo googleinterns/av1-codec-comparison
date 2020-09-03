@@ -1,0 +1,13 @@
+diff --git a/Source/Lib/Encoder/Codec/EbEncDecProcess.c b/Source/Lib/Encoder/Codec/EbEncDecProcess.c
+index b0dd5fcf..a3a2108b 100644
+--- a/Source/Lib/Encoder/Codec/EbEncDecProcess.c
++++ b/Source/Lib/Encoder/Codec/EbEncDecProcess.c
+@@ -1855,7 +1855,7 @@ EbErrorType signal_derivation_enc_dec_kernel_oq(SequenceControlSet * scs_ptr,
+             context_ptr->global_mv_injection = 0;
+         else if (context_ptr->pd_pass == PD_PASS_1)
+             context_ptr->global_mv_injection = 0;
+-        else if (pcs_ptr->enc_mode <= ENC_M1)
++        else if (pcs_ptr->enc_mode <= ENC_M5)
+             context_ptr->global_mv_injection = 1;
+         else
+             context_ptr->global_mv_injection = 0;

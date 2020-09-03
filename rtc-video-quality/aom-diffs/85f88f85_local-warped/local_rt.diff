@@ -1,0 +1,16 @@
+diff --git a/av1/av1_cx_iface.c b/av1/av1_cx_iface.c
+index 253dd7124..cfe70b317 100644
+--- a/av1/av1_cx_iface.c
++++ b/av1/av1_cx_iface.c
+@@ -989,10 +989,7 @@ static aom_codec_err_t set_encoder_config(AV1EncoderConfig *oxcf,
+   // Set motion mode related configuration.
+   oxcf->motion_mode_cfg.enable_obmc = extra_cfg->enable_obmc;
+   oxcf->motion_mode_cfg.enable_warped_motion = extra_cfg->enable_warped_motion;
+-  oxcf->motion_mode_cfg.allow_warped_motion =
+-      (cfg->g_usage == AOM_USAGE_REALTIME)
+-          ? false
+-          : (extra_cfg->allow_warped_motion & extra_cfg->enable_warped_motion);
++  oxcf->motion_mode_cfg.allow_warped_motion = (extra_cfg->allow_warped_motion & extra_cfg->enable_warped_motion);
+ 
+   // Set partition related configuration.
+   part_cfg->enable_rect_partitions = extra_cfg->enable_rect_partitions;

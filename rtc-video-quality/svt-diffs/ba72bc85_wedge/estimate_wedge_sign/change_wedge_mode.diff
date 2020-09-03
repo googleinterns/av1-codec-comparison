@@ -1,0 +1,14 @@
+diff --git a/Source/Lib/Encoder/Codec/EbPictureDecisionProcess.c b/Source/Lib/Encoder/Codec/EbPictureDecisionProcess.c
+index cd79b504..dfab6d6e 100644
+--- a/Source/Lib/Encoder/Codec/EbPictureDecisionProcess.c
++++ b/Source/Lib/Encoder/Codec/EbPictureDecisionProcess.c
+@@ -1097,7 +1097,8 @@ EbErrorType signal_derivation_multi_processes_oq(
+         // 2                 Fast: estimate Wedge sign
+         // 3                 Fast: Mode 1 & Mode 2
+ 
+-        pcs_ptr->wedge_mode = 0;
++        // Change wedge mode
++        pcs_ptr->wedge_mode = 2;
+ 
+         // inter intra pred                      Settings
+         // 0                                     OFF

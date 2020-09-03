@@ -119,6 +119,7 @@ def generate_stt(data, output_dir=''):
         filtered_item = list(filter(lambda item: item['encoder'] == encoder and item['codec'] == codec and item['input-file'] == video and bitrate == item['actual-bitrate-bps'], data))
            
         if len(filtered_item) != 1:
+            item = filtered_item[0]
             print("WARNING: %s was encoded with %s:%s using different target bitrates but has the same actual bitrate" 
                   % (item['input-file'], item['encoder'], item['codec']),
                   file=sys.stderr)

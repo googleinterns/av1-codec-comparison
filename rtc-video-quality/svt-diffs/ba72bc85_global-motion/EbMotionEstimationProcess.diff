@@ -1,0 +1,13 @@
+diff --git a/Source/Lib/Encoder/Codec/EbMotionEstimationProcess.c b/Source/Lib/Encoder/Codec/EbMotionEstimationProcess.c
+index 967b3934..e0801dd5 100644
+--- a/Source/Lib/Encoder/Codec/EbMotionEstimationProcess.c
++++ b/Source/Lib/Encoder/Codec/EbMotionEstimationProcess.c
+@@ -263,7 +263,7 @@ EbErrorType signal_derivation_me_kernel_oq(SequenceControlSet *       scs_ptr,
+ 
+     if (scs_ptr->static_config.enable_global_motion == EB_TRUE &&
+         pcs_ptr->frame_superres_enabled == EB_FALSE) {
+-        if (enc_mode <= ENC_M1)
++        if (enc_mode <= ENC_M5)
+             context_ptr->me_context_ptr->compute_global_motion = EB_TRUE;
+         else
+             context_ptr->me_context_ptr->compute_global_motion = EB_FALSE;
