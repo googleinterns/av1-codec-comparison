@@ -428,6 +428,8 @@ def find_bitrates(width, height):
 
     # Significantly lower than exact value, so 800p still counts as 720p for
     # instance.
+    if args.single_datapoint:
+        return [100]
     pixel_bound = width * height
     if pixel_bound <= 176 * 144:
         return [20, 40, 60, 80, 100, 120]
