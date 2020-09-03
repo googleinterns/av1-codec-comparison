@@ -1,0 +1,134 @@
+diff --git a/av1/encoder/speed_features.c b/av1/encoder/speed_features.c
+index e495d7e72..abed53ede 100644
+--- a/av1/encoder/speed_features.c
++++ b/av1/encoder/speed_features.c
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include <limits.h>
++#include <stdio.h>
+ 
+ #include "av1/common/reconintra.h"
+ 
+@@ -376,7 +377,6 @@ static void set_good_speed_features_framesize_independent(
+     sf->mv_sf.obmc_full_pixel_search_level = 1;
+     sf->mv_sf.use_accurate_subpel_search = USE_4_TAPS;
+ 
+-    sf->inter_sf.disable_interinter_wedge_newmv_search = boosted ? 0 : 1;
+     sf->inter_sf.prune_comp_search_by_single_result = boosted ? 2 : 1;
+     sf->inter_sf.prune_comp_type_by_comp_avg = 1;
+     sf->inter_sf.prune_comp_type_by_model_rd = boosted ? 0 : 1;
+@@ -429,10 +429,6 @@ static void set_good_speed_features_framesize_independent(
+     // bit more closely to figure out why.
+     sf->inter_sf.adaptive_rd_thresh = 1;
+     sf->inter_sf.comp_inter_joint_search_thresh = BLOCK_SIZES_ALL;
+-    sf->inter_sf.disable_interinter_wedge_newmv_search = 1;
+-    sf->inter_sf.disable_wedge_search_var_thresh = 100;
+-    sf->inter_sf.fast_interintra_wedge_search = 1;
+-    sf->inter_sf.fast_wedge_sign_estimate = 1;
+     sf->inter_sf.prune_comp_search_by_single_result = boosted ? 4 : 1;
+     sf->inter_sf.prune_compound_using_neighbors = 1;
+     sf->inter_sf.prune_comp_type_by_comp_avg = 2;
+@@ -476,8 +472,6 @@ static void set_good_speed_features_framesize_independent(
+     sf->inter_sf.disable_sb_level_mv_cost_upd = 1;
+     // TODO(yunqing): evaluate this speed feature for speed 1 & 2, and combine
+     // it with cpi->sf.disable_wedge_search_var_thresh.
+-    sf->inter_sf.disable_wedge_interintra_search = 1;
+-    sf->inter_sf.disable_smooth_interintra = boosted ? 0 : 1;
+     // TODO(any): Experiment with the early exit mechanism for speeds 0, 1 and 2
+     // and clean-up the speed feature
+     sf->inter_sf.perform_best_rd_based_gating_for_chroma = 1;
+@@ -606,7 +600,6 @@ static void set_good_speed_features_framesize_independent(
+ 
+     sf->inter_sf.prune_inter_modes_based_on_tpl = boosted ? 0 : 3;
+     sf->inter_sf.prune_comp_using_best_single_mode_ref = 2;
+-    sf->inter_sf.disable_interinter_wedge = 1;
+     sf->inter_sf.disable_obmc = 1;
+     sf->inter_sf.disable_onesided_comp = 1;
+     sf->inter_sf.txfm_rd_gate_level = boosted ? 0 : 4;
+@@ -627,6 +620,14 @@ static void set_good_speed_features_framesize_independent(
+     sf->rd_sf.perform_coeff_opt = is_boosted_arf2_bwd_type ? 4 : 6;
+     sf->tpl_sf.subpel_force_stop = FULL_PEL;
+     sf->tx_sf.tx_type_search.prune_tx_type_est_rd = 0;
++
++    sf->inter_sf.disable_interinter_wedge = 1;
++    sf->inter_sf.disable_wedge_search_var_thresh = 100;
++    sf->inter_sf.fast_interintra_wedge_search = 1;
++    sf->inter_sf.disable_wedge_interintra_search = 1;
++    sf->inter_sf.disable_interinter_wedge_newmv_search = boosted ? 0 : 1;
++    sf->inter_sf.disable_smooth_interintra = boosted ? 0 : 1;
++
+   }
+ }
+ 
+@@ -697,13 +698,13 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+     sf->mv_sf.use_accurate_subpel_search = USE_4_TAPS;
+ 
+     sf->inter_sf.prune_comp_search_by_single_result = 1;
+-    sf->inter_sf.reuse_inter_intra_mode = 1;
++    // sf->inter_sf.reuse_inter_intra_mode = 1;
+     sf->inter_sf.selective_ref_frame = 2;
+     sf->inter_sf.skip_repeated_newmv = 1;
+     sf->inter_sf.disable_wedge_search_var_thresh = 0;
+     sf->inter_sf.prune_comp_type_by_comp_avg = 1;
+     sf->inter_sf.prune_motion_mode_level = 2;
+-    sf->inter_sf.prune_single_motion_modes_by_simple_trans = 1;
++    // sf->inter_sf.prune_single_motion_modes_by_simple_trans = 1;
+ 
+     sf->interp_sf.cb_pred_filter_search = 1;
+     sf->interp_sf.use_interp_filter = 1;
+@@ -733,8 +734,6 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+ 
+     sf->inter_sf.adaptive_rd_thresh = 1;
+     sf->inter_sf.comp_inter_joint_search_thresh = BLOCK_SIZES_ALL;
+-    sf->inter_sf.disable_wedge_search_var_thresh = 100;
+-    sf->inter_sf.fast_wedge_sign_estimate = 1;
+     sf->inter_sf.prune_comp_type_by_comp_avg = 2;
+     sf->inter_sf.selective_ref_frame = 3;
+     sf->inter_sf.use_dist_wtd_comp_flag = DIST_WTD_COMP_DISABLED;
+@@ -767,7 +766,6 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+     sf->inter_sf.disable_sb_level_mv_cost_upd = 1;
+     // TODO(yunqing): evaluate this speed feature for speed 1 & 2, and combine
+     // it with cpi->sf.disable_wedge_search_var_thresh.
+-    sf->inter_sf.disable_wedge_interintra_search = 1;
+     sf->inter_sf.prune_comp_search_by_single_result = 2;
+     sf->inter_sf.prune_motion_mode_level = boosted ? 2 : 3;
+     sf->inter_sf.prune_warp_using_wmtype = 1;
+@@ -797,6 +795,7 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+   }
+ 
+   if (speed >= 5) {
++    // sf->inter_sf.disable_interinter_wedge_newmv_search = 1;
+     sf->hl_sf.recode_loop = ALLOW_RECODE_KFMAXBW;
+ 
+     sf->inter_sf.adaptive_rd_thresh = 4;
+@@ -812,7 +811,6 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+             : FLAG_SKIP_INTRA_DIRMISMATCH | FLAG_SKIP_INTRA_BESTINTER |
+                   FLAG_SKIP_COMP_BESTINTRA | FLAG_SKIP_INTRA_LOWVAR |
+                   FLAG_EARLY_TERMINATE;
+-    sf->hl_sf.frame_parameter_update = 0;
+ 
+     sf->part_sf.default_max_partition_size = BLOCK_128X128;
+     sf->part_sf.default_min_partition_size = BLOCK_8X8;
+@@ -846,8 +844,6 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+     sf->rt_sf.mode_search_skip_flags |= FLAG_SKIP_INTRA_DIRMISMATCH;
+     sf->rt_sf.num_inter_modes_for_tx_search = 5;
+     sf->rt_sf.skip_interp_filter_search = 1;
+-    sf->rt_sf.use_comp_ref_nonrd = 0;
+-    sf->rt_sf.use_real_time_ref_set = 1;
+     sf->rt_sf.use_simple_rd_model = 1;
+ 
+     if (cm->current_frame.frame_type != KEY_FRAME &&
+@@ -858,6 +854,12 @@ static void set_rt_speed_features_framesize_independent(AV1_COMP *cpi,
+   }
+ 
+   if (speed >= 6) {
++    sf->hl_sf.frame_parameter_update = 0;
++    sf->rt_sf.use_comp_ref_nonrd = 0;
++    sf->rt_sf.use_real_time_ref_set = 1;
++    sf->inter_sf.disable_wedge_interintra_search = 1;
++    sf->inter_sf.disable_wedge_search_var_thresh = 100;
++    sf->inter_sf.fast_wedge_sign_estimate = 1;
+     sf->part_sf.adjust_var_based_rd_partitioning = 1;
+   }
+ 
