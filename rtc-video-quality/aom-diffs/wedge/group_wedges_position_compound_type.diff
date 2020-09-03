@@ -1,0 +1,160 @@
+diff --git a/av1/encoder/compound_type.c b/av1/encoder/compound_type.c
+index a317fc826..2f09072df 100644
+--- a/av1/encoder/compound_type.c
++++ b/av1/encoder/compound_type.c
+@@ -17,6 +17,7 @@
+ #include "av1/encoder/rdopt_utils.h"
+ #include "av1/encoder/reconinter_enc.h"
+ #include "av1/encoder/tx_search.h"
++#include <stdlib.h>
+ 
+ typedef int64_t (*pick_interinter_mask_type)(
+     const AV1_COMP *const cpi, MACROBLOCK *x, const BLOCK_SIZE bsize,
+@@ -180,6 +181,32 @@ static int8_t estimate_wedge_sign(const AV1_COMP *cpi, const MACROBLOCK *x,
+   return (tl + br > 0);
+ }
+ 
++typedef struct wedge_type_index {
++  int8_t size;
++  int8_t indices[6];
++  char *type;
++} wedge_type_index;
++
++typedef struct wedge_info {
++  int wedge_index;
++  int64_t wedge_cost;
++  char *wedge_type;
++} wedge_info;
++
++double percdiffcalc(double a, double b) {
++    double difference = abs(a - b);
++    double average = (a + b) / 2.0;
++    return difference * 100.0 / average;
++}
++
++int compare(const void *a, const void *b) {
++
++  wedge_info *info_a = (wedge_info *)a;
++  wedge_info *info_b = (wedge_info *)b;
++
++  return (info_a->wedge_cost - info_b->wedge_cost);
++}
++
+ // Choose the best wedge index and sign
+ static int64_t pick_wedge(const AV1_COMP *const cpi, const MACROBLOCK *const x,
+                           const BLOCK_SIZE bsize, const uint8_t *const p0,
+@@ -222,37 +249,92 @@ static int64_t pick_wedge(const AV1_COMP *const cpi, const MACROBLOCK *const x,
+                        (1 << WEDGE_WEIGHT_BITS) / 2;
+   int16_t *ds = residual0;
+ 
++  int group_size = 3;
++  wedge_type_index groups[3] = {
++    // {6, {8, 10, 9, 11, 4, 5}, "VERTICAL"},
++    // {6, {12, 14, 14, 15, 6, 7}, "HORIZONTAL"}
++    // {4, {9, 11, 13, 15}, "REMAINDER"}
++    {6, {0, 1, 2, 3, 5, 7}, "MIDDLE"},
++    {3, {8, 10, 4}, "TOP"},
++    {3, {9, 11, 5}, "BOTTOM"},
++    {3, {12, 14, 6}, "LEFT"},
++    {3, {13, 15, 7}, "RIGHT"}
++  };
++
++  wedge_info *infos = malloc(16 * sizeof(wedge_info));
++  int info_i = 0;
++
++  if (bsize == BLOCK_8X8 || bsize == BLOCK_16X16 || bsize == BLOCK_32X32) {
++    groups[0].size = 4;
++    
++  } else if (bsize == BLOCK_8X16 || bsize == BLOCK_16X32 || bsize == BLOCK_8X32) {
++    groups[3].size = 2;
++    groups[4].size = 2;
++
++  } else { 
++    assert(bsize == BLOCK_16X8 || bsize == BLOCK_32X16 || bsize == BLOCK_32X8);
++
++    groups[1].size = 2;
++    groups[2].size = 2;
++
++  }
++
+   av1_wedge_compute_delta_squares(ds, residual0, residual1, N);
+ 
+-  for (wedge_index = 0; wedge_index < wedge_types; ++wedge_index) {
+-    mask = av1_get_contiguous_soft_mask(wedge_index, 0, bsize);
++  for (int8_t group_index = 0; group_index < group_size; group_index++) { 
++    int8_t total_wedges = groups[group_index].size;
++    int8_t *wedge_indices = groups[group_index].indices;
++    char *wedge_type = groups[group_index].type;
+ 
+-    wedge_sign = av1_wedge_sign_from_residuals(ds, mask, N, sign_limit);
++    printf("Looping through the %s group\n", wedge_type);
++    
++    for (int i = 0; i < total_wedges; ++i) {
++        wedge_index = wedge_indices[i];
+ 
+-    mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
+-    sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
+-    sse = ROUND_POWER_OF_TWO(sse, bd_round);
++        mask = av1_get_contiguous_soft_mask(wedge_index, 0, bsize);
+ 
+-    model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N,
+-                                                  &rate, &dist);
+-    // int rate2;
+-    // int64_t dist2;
+-    // model_rd_with_curvfit(cpi, x, bsize, 0, sse, N, &rate2, &dist2);
+-    // printf("sse %"PRId64": leagacy: %d %"PRId64", curvfit %d %"PRId64"\n",
+-    // sse, rate, dist, rate2, dist2); dist = dist2;
+-    // rate = rate2;
++        wedge_sign = av1_wedge_sign_from_residuals(ds, mask, N, sign_limit);
+ 
+-    rate += x->mode_costs.wedge_idx_cost[bsize][wedge_index];
+-    rd = RDCOST(x->rdmult, rate, dist);
++        mask = av1_get_contiguous_soft_mask(wedge_index, wedge_sign, bsize);
++        sse = av1_wedge_sse_from_residuals(residual1, diff10, mask, N);
++        sse = ROUND_POWER_OF_TWO(sse, bd_round);
+ 
+-    if (rd < best_rd) {
+-      *best_wedge_index = wedge_index;
+-      *best_wedge_sign = wedge_sign;
+-      best_rd = rd;
+-      *best_sse = sse;
+-    }
++        model_rd_sse_fn[MODELRD_TYPE_MASKED_COMPOUND](cpi, x, bsize, 0, sse, N,
++                                                      &rate, &dist);
++
++        rate += x->mode_costs.wedge_idx_cost[bsize][wedge_index];
++        rd = RDCOST(x->rdmult, rate, dist);
++        printf("The associated cost for wedge index %d of wedge sign %d is %d\n", wedge_index, wedge_sign, rd);
++
++        if (rd < best_rd) {
++          *best_wedge_index = wedge_index;
++          *best_wedge_sign = wedge_sign;
++          best_rd = rd;
++          *best_sse = sse;
++        }
++
++        struct wedge_info *info = &infos[info_i];
++        info->wedge_index = wedge_index;
++        info->wedge_type = wedge_type;
++        info->wedge_cost = rd;
++        info_i++;
++      }
+   }
+ 
++
++  qsort(infos, 16, sizeof(struct wedge_info), compare);
++
++  printf("\nOrdered cost: \n");
++  for (int i = 0; i < 16; i++) {
++    struct wedge_info info = infos[i];
++    
++    printf("Wedge index: %d\tWedge cost: %d\tWedge type: %s\n", info.wedge_index, info.wedge_cost, info.wedge_type);
++  }
++
++  printf("The best wedge index chosen is %d with wedge sign %d\n\n", *best_wedge_index, *best_wedge_sign);
++
++  free(infos);
++
+   return best_rd -
+          RDCOST(x->rdmult,
+                 x->mode_costs.wedge_idx_cost[bsize][*best_wedge_index], 0);
